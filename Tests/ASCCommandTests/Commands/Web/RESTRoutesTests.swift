@@ -1073,4 +1073,82 @@ struct RESTRoutesTests {
         #expect(normalized.contains("\"_links\""))
         #expect(normalized.contains("/api/v1/iris/review-submissions/sub-1/resolution-center"))
     }
+    // MARK: - Experiments (Product Page Optimization)
+
+    @Test func `experiments list returns JSON with _links pointing at REST paths`() async throws {
+        let mockRepo = MockExperimentRepository()
+        given(mockRepo).listExperiments(appId: .any, state: .any, limit: .any).willReturn(
+            PaginatedResponse(data: [
+                AppStoreVersionExperiment(id: "exp-1", appId: "app-42", name: "Icon test", platform: .iOS,
+                                          trafficProportion: 30, state: .prepareForSubmission)
+            ], nextCursor: nil)
+        )
+
+        let output = try await ExperimentsList.parse(["--app-id", "app-42", "--pretty"])
+            .execute(repo: mockRepo, affordanceMode: .rest)
+        let normalized = output.replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(normalized.contains("\"_links\""))
+        #expect(normalized.contains("/api/v1/apps/app-42/experiments"))
+        #expect(normalized.contains("/api/v1/experiments/exp-1/experiment-treatments"))
+        #expect(normalized.contains("\"href\" : \"/api/v1/experiments/exp-1\""))
+        #expect(!normalized.contains("\"affordances\""))
+    }
+
+    @Test func `experiments REST exposes start link for approved unstarted test`() async throws {
+        let mockRepo = MockExperimentRepository()
+        given(mockRepo).getExperiment(experimentId: .any).willReturn(
+            AppStoreVersionExperiment(id: "exp-1", appId: "app-42", name: "Icon test", platform: .iOS,
+                                      trafficProportion: 30, state: .approved)
+        )
+
+        let output = try await ExperimentsGet.parse(["--experiment-id", "exp-1", "--pretty"])
+            .execute(repo: mockRepo, affordanceMode: .rest)
+        let normalized = output.replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(normalized.contains("/api/v1/experiments/exp-1/start"))
+        #expect(!normalized.contains("/api/v1/experiments/exp-1/stop"))
+    }
+
+    @Test func `experiment treatments REST exposes nested path under experiment`() async throws {
+        let mockRepo = MockExperimentRepository()
+        given(mockRepo).listTreatments(experimentId: .any, limit: .any).willReturn(
+            PaginatedResponse(data: [ExperimentTreatment(id: "trt-1", experimentId: "exp-7", name: "Blue icon")], nextCursor: nil)
+        )
+
+        let output = try await ExperimentTreatmentsList.parse(["--experiment-id", "exp-7", "--pretty"])
+            .execute(repo: mockRepo, affordanceMode: .rest)
+        let normalized = output.replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(normalized.contains("\"_links\""))
+        #expect(normalized.contains("/api/v1/experiments/exp-7/experiment-treatments"))
+        #expect(normalized.contains("/api/v1/experiment-treatments/trt-1/experiment-treatment-localizations"))
+        #expect(normalized.contains("\"href\" : \"/api/v1/experiment-treatments/trt-1\""))
+    }
+
+    @Test func `experiment treatment localizations REST exposes nested path under treatment`() async throws {
+        let mockRepo = MockExperimentRepository()
+        given(mockRepo).listTreatmentLocalizations(treatmentId: .any, limit: .any).willReturn([
+            ExperimentTreatmentLocalization(id: "loc-1", treatmentId: "trt-7", locale: "en-US")
+        ])
+
+        let output = try await ExperimentTreatmentLocalizationsList.parse(["--treatment-id", "trt-7", "--pretty"])
+            .execute(repo: mockRepo, affordanceMode: .rest)
+        let normalized = output.replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(normalized.contains("\"_links\""))
+        #expect(normalized.contains("/api/v1/experiment-treatments/trt-7/experiment-treatment-localizations"))
+        #expect(normalized.contains("\"href\" : \"/api/v1/experiment-treatment-localizations/loc-1\""))
+    }
+
+    @Test func `app REST links include experiments`() async throws {
+        let mockRepo = MockAppRepository()
+        given(mockRepo).listApps(limit: .any).willReturn(
+            PaginatedResponse(data: [App(id: "42", name: "MyApp", bundleId: "com.test")])
+        )
+        let output = try await AppsList.parse(["--pretty"]).execute(repo: mockRepo, affordanceMode: .rest)
+        let normalized = output.replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(normalized.contains("/api/v1/apps/42/experiments"))
+    }
 }

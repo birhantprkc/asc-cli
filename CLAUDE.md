@@ -118,6 +118,7 @@ App → CiProduct (XcodeCloud) → CiWorkflow → CiBuildRun
 AppStoreVersion → VersionReadiness
 AppStoreVersion → AppStoreReviewDetail
 CodeSigning: BundleID → Profile
+App → AppStoreVersionExperiment → ExperimentTreatment → ExperimentTreatmentLocalization
 App → PerformanceMetric (via perfPowerMetrics)
 Build → PerformanceMetric (via perfPowerMetrics)
 Build → DiagnosticSignatureInfo → DiagnosticLogEntry
@@ -140,6 +141,8 @@ Domain/
 │   │                                CustomerReviewRepository
 │   ├── Builds/                    → Build, BuildUpload, BetaBuildLocalization,
 │   │                                BuildRepository, BuildUploadRepository, BetaBuildLocalizationRepository
+│   ├── Experiments/               → AppStoreVersionExperiment, AppStoreVersionExperimentState,
+│   │                                ExperimentTreatment, ExperimentTreatmentLocalization, ExperimentRepository
 │   ├── Pricing/                   → PricingRepository
 │   ├── TestFlight/                → BetaGroup, BetaTester, TestFlightRepository
 │   └── Performance/              → PerformanceMetric, PerformanceMetricCategory, DiagnosticSignatureInfo,
@@ -244,7 +247,7 @@ After every code change — new feature, improvement, or bug fix — update all 
 Key skills to keep in sync:
 - `implement-feature/SKILL.md` — workflow + checklist
 - `asc-cli/references/commands.md` — command reference
-- Feature-specific skills (`asc-testflight`, `asc-beta-review`, `asc-builds-upload`, `asc-code-signing`, `asc-check-readiness`, `asc-app-previews`, `asc-app-shots`, `asc-review-detail`, `asc-plugins`, etc.)
+- Feature-specific skills (`asc-testflight`, `asc-beta-review`, `asc-builds-upload`, `asc-code-signing`, `asc-check-readiness`, `asc-app-previews`, `asc-app-shots`, `asc-review-detail`, `asc-plugins`, `asc-experiments`, etc.)
 
 **`CLAUDE.md`** — update when architecture patterns, file locations, or design rules change.
 

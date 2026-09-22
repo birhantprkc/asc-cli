@@ -1390,3 +1390,45 @@ struct MockRepositoryFactory {
         )
     }
 }
+
+// MARK: - Experiments (Product Page Optimization)
+
+extension MockRepositoryFactory {
+    static func makeExperiment(
+        id: String = "exp-1",
+        appId: String = "app-1",
+        name: String = "Test",
+        platform: AppStorePlatform = .iOS,
+        trafficProportion: Int = 50,
+        state: AppStoreVersionExperimentState = .prepareForSubmission,
+        isReviewRequired: Bool = true,
+        startDate: String? = nil,
+        endDate: String? = nil,
+        latestControlVersionId: String? = nil
+    ) -> AppStoreVersionExperiment {
+        AppStoreVersionExperiment(
+            id: id, appId: appId, name: name, platform: platform,
+            trafficProportion: trafficProportion, state: state,
+            isReviewRequired: isReviewRequired, startDate: startDate, endDate: endDate,
+            latestControlVersionId: latestControlVersionId
+        )
+    }
+
+    static func makeExperimentTreatment(
+        id: String = "trt-1",
+        experimentId: String = "exp-1",
+        name: String = "Treatment A",
+        appIconName: String? = nil,
+        promotedDate: String? = nil
+    ) -> ExperimentTreatment {
+        ExperimentTreatment(id: id, experimentId: experimentId, name: name, appIconName: appIconName, promotedDate: promotedDate)
+    }
+
+    static func makeExperimentTreatmentLocalization(
+        id: String = "loc-1",
+        treatmentId: String = "trt-1",
+        locale: String = "en-US"
+    ) -> ExperimentTreatmentLocalization {
+        ExperimentTreatmentLocalization(id: id, treatmentId: treatmentId, locale: locale)
+    }
+}
