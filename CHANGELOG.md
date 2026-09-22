@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Product Page Optimization tests** — `asc experiments list|get|create|update|start|stop|delete`, `asc experiment-treatments list|create|update|delete`, and `asc experiment-treatment-localizations list|create|delete` manage App Store product page A/B tests (ASC API `appStoreVersionExperiments` v2). A test is app-scoped; `create` takes `--name`, `--platform` and `--traffic-proportion 1-100`; `start`/`stop` map to `PATCH { started: true|false }`. New `AppStoreVersionExperiment` (+ `AppStoreVersionExperimentState` with `isEditable`/`isPendingReview`/`isApproved`/`isFinished`, and `isRunning`/`canStart` on the model), `ExperimentTreatment` and `ExperimentTreatmentLocalization` domain types in `Domain/Apps/Experiments/`, backed by `ExperimentRepository`. Affordances are state-aware: `createTreatment`/`update`/`delete` only while editable, `start` only when approved and unstarted, `stop` only while running. `App` gains a `listExperiments` affordance for discovery. REST equivalents under `/api/v1/apps/:appId/experiments`, `/api/v1/experiments/:id[/start|/stop|/experiment-treatments]`, `/api/v1/experiment-treatments/:id[/experiment-treatment-localizations]` and `/api/v1/experiment-treatment-localizations/:id` via `ExperimentsController`. See `docs/features/product-page-optimization.md`.
+
 ---
 
 ## [0.18.2] - 2026-07-16

@@ -59,6 +59,7 @@ Now `asc iap list --app-id <id>` enriches each IAP with the right submission aff
 | **Authentication** | Multi-account credential management; named accounts, active-account switching |
 | **Project Init** | `asc init` pins app context to `.asc/project.json`; auto-detects from `.xcodeproj` |
 | **Customer Reviews** | Read customer reviews, respond to feedback, and manage review responses |
+| **Product Page Optimization** | Create A/B tests of your product page (`experiments`), add up to three treatments with alternate icons, choose locales, start/stop the test |
 | **App Clips** | Manage App Clips, default experiences, and locale-specific card content |
 | **Game Center** | Manage achievements and leaderboards for your game |
 | **Plugins** | Install executable plugins in `~/.asc/plugins/` for custom event handlers |
@@ -361,6 +362,9 @@ asc subscriptions create --group-id <gid> --name "Monthly" --product-id "com.app
 asc subscriptions prices set --subscription-id <sub> --territory USA --price-point-id <pp>
 
 asc promoted-purchases create --app-id <id> --iap-id <iap> --visible --enabled
+
+asc experiments create --app-id <id> --name "Icon test" --traffic-proportion 30
+asc experiment-treatments create --experiment-id <exp> --name "Blue icon" --app-icon-name AppIcon-Blue
 ```
 
 | Area | Documentation |
@@ -374,6 +378,7 @@ asc promoted-purchases create --app-id <id> --iap-id <iap> --visible --enabled
 | Win-back offers (lapsed subscribers, eligibility rules + priority) | [iap-subscriptions/win-back-offers.md](docs/features/iap-subscriptions/win-back-offers.md) |
 | Review screenshots & 1024×1024 promotional images | [iap-subscriptions/review-assets.md](docs/features/iap-subscriptions/review-assets.md) |
 | Promoted purchases (App Store product page slots) | [docs/features/promoted-purchases.md](docs/features/promoted-purchases.md) |
+| Product Page Optimization tests (experiments, treatments, treatment localizations) | [docs/features/product-page-optimization.md](docs/features/product-page-optimization.md) |
 | Territory availability (apps, IAPs, subscriptions) | [docs/features/iap-subscription-availability.md](docs/features/iap-subscription-availability.md) |
 
 ### Code Signing

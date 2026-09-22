@@ -84,6 +84,13 @@ struct AffordancesTests {
     // MARK: - App affordances (extended)
 
     @Test
+    func `app affordances include listExperiments command`() {
+        let app = App(id: "app-1", name: "My App", bundleId: "com.example")
+        #expect(app.affordances["listExperiments"] == "asc experiments list --app-id app-1")
+        #expect(app.apiLinks["listExperiments"]?.href == "/api/v1/apps/app-1/experiments")
+    }
+
+    @Test
     func `app affordances include listAppInfos command`() {
         let app = App(id: "app-1", name: "My App", bundleId: "com.example")
         #expect(app.affordances["listAppInfos"] == "asc app-infos list --app-id app-1")

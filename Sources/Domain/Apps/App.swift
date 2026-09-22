@@ -89,6 +89,7 @@ extension App: AffordanceProviding {
             Affordance(key: "createVersion", command: "versions", action: "create", params: ["app-id": id]),
             Affordance(key: "listAppInfos", command: "app-infos", action: "list", params: ["app-id": id]),
             Affordance(key: "listReviews", command: "reviews", action: "list", params: ["app-id": id]),
+            Affordance(key: "listExperiments", command: "experiments", action: "list", params: ["app-id": id]),
             Affordance(key: "updateContentRights", command: "apps", action: "update", params: ["app-id": id]),
         ]
     }
