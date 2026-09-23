@@ -19,10 +19,23 @@ public struct AppAvailability: Sendable, Equatable, Identifiable, Codable {
 }
 
 extension AppAvailability: AffordanceProviding {
-    public var affordances: [String: String] {
+    public var structuredAffordances: [Affordance] {
         [
-            "getAvailability": "asc app-availability get --app-id \(appId)",
-            "listTerritories": "asc territories list",
+            Affordance(key: "getAvailability", command: "app-availability", action: "get", params: ["app-id": appId]),
+            Affordance(key: "listTerritories", command: "territories", action: "list"),
         ]
     }
+}
+
+extension AppAvailability: Presentable {
+    public static var tableHeaders: [String] { ["ID", "App ID", "Available in New Territories", "Territories"] }
+    public var tableRow: [String] {
+        [id, appId, String(isAvailableInNewTerritories), "\(territories.filter(\.isAvailable).count)/\(territories.count) available"]
+    }
+}
+
+extension RESTPathResolver {
+    static let _appAvailabilityRoutes: Void = {
+        registerRoute(command: "app-availability", parentParam: "app-id", parentSegment: "apps", segment: "availability")
+    }()
 }

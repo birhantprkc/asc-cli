@@ -25,6 +25,7 @@ struct AppsListTests {
                 "createVersion" : "asc versions create --app-id app-1",
                 "listAppInfos" : "asc app-infos list --app-id app-1",
                 "listExperiments" : "asc experiments list --app-id app-1",
+                "listPricePoints" : "asc apps price-points list --app-id app-1 --territory USA",
                 "listReviews" : "asc reviews list --app-id app-1",
                 "listVersions" : "asc versions list --app-id app-1",
                 "updateContentRights" : "asc apps update --app-id app-1"
@@ -58,6 +59,7 @@ struct AppsListTests {
                 "createVersion" : "asc versions create --app-id app-1",
                 "listAppInfos" : "asc app-infos list --app-id app-1",
                 "listExperiments" : "asc experiments list --app-id app-1",
+                "listPricePoints" : "asc apps price-points list --app-id app-1 --territory USA",
                 "listReviews" : "asc reviews list --app-id app-1",
                 "listVersions" : "asc versions list --app-id app-1",
                 "updateContentRights" : "asc apps update --app-id app-1"

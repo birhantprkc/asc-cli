@@ -27,6 +27,25 @@ Example output:
 }
 ```
 
+An app whose availability was never set up (App Store Connect shows **Set Up Availability**) returns `{"data":[]}`, and the CLI prints a hint with the `create` command on stderr.
+
+#### Set up app availability
+
+```bash
+asc app-availability create --app-id <id> --all-territories --available-in-new-territories
+asc app-availability create --app-id <id> --territory USA --territory JPN [--available-in-new-territories]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--territory` | Territory to make the app available in; repeat for several |
+| `--all-territories` | Every territory from `asc territories list` (exactly one of these two) |
+| `--available-in-new-territories` | Also make it available in territories Apple adds later |
+
+One `POST /v2/appAvailabilities` with each territory as an inline `territoryAvailabilities` entry (`available: true`), then the availability is read back. Before release every territory reports `CANNOT_SELL` + `AVAILABLE_FOR_SALE_UNRELEASED_APP` — expected until the app is live.
+
+REST: `GET /api/v1/apps/{appId}/availability`, `POST /api/v1/apps/{appId}/availability` with body `{"territory": ["USA"]}` or `{"all-territories": true}`, plus optional `"available-in-new-territories": true`.
+
 **ContentStatus values** include: `AVAILABLE`, `MISSING_RATING`, `CANNOT_SELL_RESTRICTED_RATING`, `CANNOT_SELL_GAMBLING`, `BRAZIL_REQUIRED_TAX_ID`, `ICP_NUMBER_MISSING`, and 30+ more reasons explaining why a territory is blocked.
 
 ### Discover Territories

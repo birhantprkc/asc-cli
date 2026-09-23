@@ -6,6 +6,7 @@ struct AppAvailabilityCommand: AsyncParsableCommand {
         abstract: "Manage app territory availability",
         subcommands: [
             AppAvailabilityGet.self,
+            AppAvailabilityCreate.self,
         ],
         defaultSubcommand: AppAvailabilityGet.self
     )
