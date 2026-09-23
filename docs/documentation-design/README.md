@@ -4,7 +4,7 @@ description: How asc-cli docs are layered (Skill-style progressive disclosure), 
 
 # Documentation Design
 
-> Status: **proposed**, 2026-09-23. Not implemented yet. See [Migration](#migration).
+> Status: **adopted**, 2026-09-23. `make check-docs` enforces it in CI.
 
 ## Goal
 

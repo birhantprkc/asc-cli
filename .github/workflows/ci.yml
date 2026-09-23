@@ -11,6 +11,16 @@ env:
   SWIFT_VERSION: "6.2"
 
 jobs:
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check links, budgets and changelog
+        run: python3 scripts/check-docs.py --strict
+
   test:
     name: Build & Test
     runs-on: macos-15
@@ -29,6 +39,12 @@ jobs:
 
       - name: Build
         run: swift build -c release
+
+      - name: Generated docs are up to date
+        run: |
+          python3 scripts/gen-docs.py .build/release/asc
+          git diff --exit-code docs/commands.md docs/README.md \
+            || { echo "::error::Run 'make docs' and commit docs/commands.md and docs/README.md"; exit 1; }
 
       - name: Test with coverage
         run: swift test --enable-code-coverage
