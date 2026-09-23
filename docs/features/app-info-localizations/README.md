@@ -50,11 +50,11 @@ The `app-infos list` response links onward to localizations and age rating:
   "data": [
     {
       "id": "info-abc123",
-      "appId": "6746148194",
+      "appId": "1234567890",
       "affordances": {
         "createLocalization": "asc app-info-localizations create --app-info-id info-abc123",
         "getAgeRating": "asc age-rating get --app-info-id info-abc123",
-        "listAppInfos": "asc app-infos list --app-id 6746148194",
+        "listAppInfos": "asc app-infos list --app-id 1234567890",
         "listLocalizations": "asc app-info-localizations list --app-info-id info-abc123",
         "updateCategories": "asc app-infos update --app-info-id info-abc123"
       }

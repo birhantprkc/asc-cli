@@ -41,7 +41,7 @@ asc versions submit --version-id <VERSION_ID>
 Update several fields at once; only the ones you pass are sent:
 
 ```bash
-asc version-localizations update --localization-id 9584409e-... \
+asc version-localizations update --localization-id loc-1 \
   --whats-new "Bug fixes" \
   --keywords "productivity,tasks,calendar"
 ```
@@ -50,14 +50,14 @@ asc version-localizations update --localization-id 9584409e-... \
 {
   "data": [
     {
-      "id": "9584409e-a626-46d4-9b65-4cac006f4197",
-      "versionId": "74ed4466-8dc4-4ec7-b2ce-3c1bbe620964",
+      "id": "loc-1",
+      "versionId": "ver-1",
       "locale": "en-US",
       "whatsNew": "Bug fixes and performance improvements",
       "affordances": {
-        "listLocalizations": "asc version-localizations list --version-id 74ed4466-...",
-        "listScreenshotSets": "asc screenshot-sets list --localization-id 9584409e-...",
-        "updateLocalization": "asc version-localizations update --localization-id 9584409e-..."
+        "listLocalizations": "asc version-localizations list --version-id ver-1",
+        "listScreenshotSets": "asc screenshot-sets list --localization-id loc-1",
+        "updateLocalization": "asc version-localizations update --localization-id loc-1"
       }
     }
   ]

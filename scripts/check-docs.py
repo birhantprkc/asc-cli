@@ -99,11 +99,27 @@ def check_links():
                     report(path, f"line {n}: broken link {target}")
 
 
+UUID = re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")
+
+
+def check_placeholders():
+    """Examples must use placeholder IDs (ver-1, 1234567890), never IDs copied from a real account."""
+    docs = ROOT / "docs"
+    for path in sorted(docs.rglob("*.md")):
+        if "changelog" in path.parts:
+            continue
+        for n, line in enumerate(path.read_text().splitlines(), 1):
+            for m in UUID.findall(line):
+                if len(set(m.replace("-", ""))) > 2:  # 00000000-…-0001 style is fine
+                    report(path, f"line {n}: real-looking UUID {m}; use a placeholder such as ver-1")
+
+
 def main():
     check_budgets()
     check_descriptions()
     check_changelog()
     check_links()
+    check_placeholders()
     for p in problems:
         print(p)
     print(f"{len(problems)} problem(s)")

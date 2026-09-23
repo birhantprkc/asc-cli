@@ -51,11 +51,11 @@ When review info has never been set, `get` returns an empty record rather than a
   "data": [
     {
       "id": "",
-      "versionId": "74ed4466-...",
+      "versionId": "ver-1",
       "demoAccountRequired": false,
       "affordances": {
-        "getReviewDetail": "asc version-review-detail get --version-id 74ed4466-...",
-        "updateReviewDetail": "asc version-review-detail update --version-id 74ed4466-..."
+        "getReviewDetail": "asc version-review-detail get --version-id ver-1",
+        "updateReviewDetail": "asc version-review-detail update --version-id ver-1"
       }
     }
   ]

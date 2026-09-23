@@ -18,7 +18,7 @@ Apple versions products the way it versions apps: every IAP, subscription and su
 ## Quick start
 
 ```bash
-VERSION=5b8c81cc-b230-48ae-858e-b3c598ba5bfa
+VERSION=ver-1
 asc versions submit --version-id $VERSION --with-products --dry-run --output table
 asc versions submit --version-id $VERSION --with-products
 ```
@@ -29,8 +29,8 @@ asc versions submit --version-id $VERSION --with-products
 
 ```bash
 # 1. Products must be READY_TO_SUBMIT (metadata, pricing, review screenshot complete)
-asc iap list --app-id 6792459661 --output table
-asc subscriptions list --group-id 22406463 --output table
+asc iap list --app-id 1234567890 --output table
+asc subscriptions list --group-id group-1 --output table
 
 # 2. See exactly what will go to review
 asc versions submit --version-id $VERSION --with-products --dry-run --output table
@@ -45,12 +45,12 @@ What goes in, in this order:
 3. for each subscription group with at least one `READY_TO_SUBMIT` subscription: the group's submittable version, then those subscriptions' submittable versions.
 
 ```
-Kind                        Version ID                            Product ID  Name
---------------------------  ------------------------------------  ----------  -------------------
-APP_STORE_VERSION           5b8c81cc-b230-48ae-858e-b3c598ba5bfa  6792459661  1.0
-IN_APP_PURCHASE_VERSION     c196c754-caa1-4969-a65b-1c76db83439e  6815067726  Unveil Pro Lifetime
-SUBSCRIPTION_GROUP_VERSION  83709e0a-c2fd-4cbf-bbef-0a8cadabf29e  22406463    Unveil Pro
-SUBSCRIPTION_VERSION        2da66776-9b90-46e0-9ceb-38d7e06570d8  6815067714  Unveil Pro Monthly
+Kind                        Version ID  Product ID  Name
+--------------------------  ----------  ----------  ------------
+APP_STORE_VERSION           ver-1       1234567890  1.0
+IN_APP_PURCHASE_VERSION     iapv-1      iap-1       Pro Lifetime
+SUBSCRIPTION_GROUP_VERSION  sgv-1       group-1     Pro
+SUBSCRIPTION_VERSION        subv-1      sub-1       Pro Monthly
 ```
 
 A real run prints the submission (`state: WAITING_FOR_REVIEW`).
@@ -58,10 +58,10 @@ A real run prints the submission (`state: WAITING_FOR_REVIEW`).
 ### Build a submission step by step
 
 ```bash
-asc subscription-groups versions list --group-id 22406463 --pretty
-SUB=$(asc review-submissions create --app-id 6792459661 | jq -r '.data[0].id')
+asc subscription-groups versions list --group-id group-1 --pretty
+SUB=$(asc review-submissions create --app-id 1234567890 | jq -r '.data[0].id')
 asc review-submissions items add --submission-id $SUB --version-id $VERSION
-asc review-submissions items add --submission-id $SUB --iap-version-id c196c754-caa1-4969-a65b-1c76db83439e
+asc review-submissions items add --submission-id $SUB --iap-version-id iapv-1
 asc review-submissions items list --submission-id $SUB --output table
 asc review-submissions submit --submission-id $SUB
 ```
@@ -71,12 +71,12 @@ A product version carries an `addToSubmission` affordance while it is submittabl
 ```json
 {
   "affordances" : {
-    "addToSubmission" : "asc review-submissions items add --submission-id <submission-id> --subscription-group-version-id 83709e0a-…",
-    "listVersions" : "asc subscription-groups versions list --group-id 22406463"
+    "addToSubmission" : "asc review-submissions items add --submission-id <submission-id> --subscription-group-version-id sgv-1",
+    "listVersions" : "asc subscription-groups versions list --group-id group-1"
   },
-  "id" : "83709e0a-c2fd-4cbf-bbef-0a8cadabf29e",
+  "id" : "sgv-1",
   "kind" : "SUBSCRIPTION_GROUP",
-  "productId" : "22406463",
+  "productId" : "group-1",
   "state" : "PREPARE_FOR_SUBMISSION",
   "version" : 1
 }
@@ -117,9 +117,9 @@ Error: Apple refused the review submission: This resource cannot be reviewed, pl
 Body keys and query names are the CLI flag names.
 
 ```bash
-curl -X POST 'http://localhost:8420/api/v1/versions/5b8c81cc-b230-48ae-858e-b3c598ba5bfa/submit?with-products=true&dry-run=true'
-curl -X POST http://localhost:8420/api/v1/review-submissions/487610a2-b816-45fc-bdb0-5dfe601cb8b8/items \
-  -d '{"iap-version-id": "c196c754-caa1-4969-a65b-1c76db83439e"}'
+curl -X POST 'http://localhost:8420/api/v1/versions/ver-1/submit?with-products=true&dry-run=true'
+curl -X POST http://localhost:8420/api/v1/review-submissions/submission-1/items \
+  -d '{"iap-version-id": "iapv-1"}'
 ```
 
 ## Gotchas

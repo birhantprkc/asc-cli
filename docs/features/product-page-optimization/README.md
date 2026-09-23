@@ -11,8 +11,8 @@ Hierarchy: `App → Experiment → Treatment → Treatment localization`.
 ## Quick start
 
 ```bash
-asc experiments list --app-id 6792459661 --state APPROVED --output table
-asc experiments create --app-id 6792459661 --name "Icon test" --platform ios --traffic-proportion 30
+asc experiments list --app-id 1234567890 --state APPROVED --output table
+asc experiments create --app-id 1234567890 --name "Icon test" --platform ios --traffic-proportion 30
 asc experiment-treatments create --experiment-id exp-1 --name "Blue icon" --app-icon-name AppIcon-Blue
 asc experiments start --experiment-id exp-1
 ```
@@ -22,7 +22,7 @@ asc experiments start --experiment-id exp-1
 ### Run an icon test end to end
 
 ```bash
-APP_ID=6792459661
+APP_ID=1234567890
 
 # 1. Create the test (app must be live / pre-order ready)
 EXP=$(asc experiments create --app-id $APP_ID --name "Icon test" --traffic-proportion 30 \
@@ -101,10 +101,10 @@ Query params: `--state` → `?state=`, `--limit` → `?limit=`. Bodies use camel
 Discovery: `GET /api/v1/apps` items carry `_links.listExperiments`; each experiment's `_links` follow the same state rules as the CLI affordances.
 
 ```bash
-curl "http://127.0.0.1:8420/api/v1/apps/6792459661/experiments?state=APPROVED&limit=5"
+curl "http://127.0.0.1:8420/api/v1/apps/1234567890/experiments?state=APPROVED&limit=5"
 curl -X POST -H 'Content-Type: application/json' \
   -d '{"name":"Icon test","platform":"ios","trafficProportion":30}' \
-  http://127.0.0.1:8420/api/v1/apps/6792459661/experiments
+  http://127.0.0.1:8420/api/v1/apps/1234567890/experiments
 curl -X POST http://127.0.0.1:8420/api/v1/experiments/exp-1/start
 ```
 

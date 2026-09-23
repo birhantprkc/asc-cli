@@ -10,7 +10,7 @@ Hierarchy: `App → AppInfo → AppInfoLocalization`. Each app typically has one
 
 ## Quick start
 ```bash
-APP_INFO_ID=$(asc app-infos list --app-id 6746148194 | jq -r '.data[0].id')
+APP_INFO_ID=$(asc app-infos list --app-id 1234567890 | jq -r '.data[0].id')
 asc app-info-localizations list --app-info-id "$APP_INFO_ID" --output table
 asc app-infos update --app-info-id "$APP_INFO_ID" --primary-category GAMES --primary-subcategory-one GAMES_ACTION
 ```
@@ -79,11 +79,11 @@ The AppInfo JSON carries affordances to its localizations, categories and age ra
 ```json
 {
   "id": "info-abc123",
-  "appId": "6746148194",
+  "appId": "1234567890",
   "affordances": {
     "createLocalization": "asc app-info-localizations create --app-info-id info-abc123",
     "getAgeRating":      "asc age-rating get --app-info-id info-abc123",
-    "listAppInfos":      "asc app-infos list --app-id 6746148194",
+    "listAppInfos":      "asc app-infos list --app-id 1234567890",
     "listLocalizations": "asc app-info-localizations list --app-info-id info-abc123",
     "updateCategories":  "asc app-infos update --app-info-id info-abc123"
   }

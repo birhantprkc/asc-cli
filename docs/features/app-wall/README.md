@@ -10,7 +10,7 @@ Community showcase of apps published on the App Store using asc, displayed at [a
 
 ```bash
 export GITHUB_TOKEN="ghp_..."          # or: gh auth login
-asc app-wall submit --app-id 6446381990 --developer "itshan"
+asc app-wall submit --app-id 1234567890 --developer "your-handle"
 ```
 
 ## Workflows
@@ -28,14 +28,14 @@ asc app-wall submit \
 
 # Specific App Store URLs (repeat --app or --app-id for several)
 asc app-wall submit \
-  --developer "itshan" \
+  --developer "your-handle" \
   --app "https://apps.apple.com/us/app/my-app/id123456789"
 
 # All modes combined
 asc app-wall submit \
-  --developer "itshan" \
-  --developer-id "1725133580" \
-  --app-id 6446381990 \
+  --developer "your-handle" \
+  --developer-id "987654320" \
+  --app-id 1234567890 \
   --app "https://apps.apple.com/us/app/extra-app/id987654321"
 ```
 
@@ -46,10 +46,10 @@ The CLI forks `tddworks/asc-cli` on your behalf, adds your entry to `homepage/ap
   "data": [
     {
       "affordances": { "openPR": "open https://github.com/tddworks/asc-cli/pull/42" },
-      "developer": "itshan",
+      "developer": "your-handle",
       "prNumber": 42,
       "prUrl": "https://github.com/tddworks/asc-cli/pull/42",
-      "title": "feat(app-wall): add itshan"
+      "title": "feat(app-wall): add your-handle"
     }
   ]
 }

@@ -9,7 +9,7 @@ Beta groups and testers: create groups, invite and remove testers, and move test
 ## Quick start
 
 ```bash
-asc testflight groups list --app-id 6450406024 --pretty
+asc testflight groups list --app-id 1234567890 --pretty
 asc testflight testers list --beta-group-id g-abc123 --pretty
 asc testflight testers add --beta-group-id g-abc123 --email jane@example.com --first-name Jane --last-name Doe
 ```
@@ -20,10 +20,10 @@ asc testflight testers add --beta-group-id g-abc123 --email jane@example.com --f
 
 ```bash
 # External group with public link
-asc testflight groups create --app-id 6450406024 --name "External Beta" --public-link-enabled
+asc testflight groups create --app-id 1234567890 --name "External Beta" --public-link-enabled
 
 # Internal group (team members only)
-asc testflight groups create --app-id 6450406024 --name "Company Team" --internal
+asc testflight groups create --app-id 1234567890 --name "Company Team" --internal
 ```
 
 Group JSON carries next steps:
@@ -31,7 +31,7 @@ Group JSON carries next steps:
 ```json
 {
   "id": "g-abc123",
-  "appId": "6450406024",
+  "appId": "1234567890",
   "name": "External Beta",
   "isInternalGroup": false,
   "publicLinkEnabled": false,

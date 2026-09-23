@@ -37,8 +37,8 @@ A ready report (trimmed):
 
 ```json
 {
-  "id": "74ed4466-8dc4-4ec7-b2ce-3c1bbe620964",
-  "appId": "6748760927",
+  "id": "ver-1",
+  "appId": "1234567890",
   "versionString": "2.1.0",
   "state": "PREPARE_FOR_SUBMISSION",
   "isReadyToSubmit": true,
@@ -54,9 +54,9 @@ A ready report (trimmed):
   },
   "reviewContactCheck": { "pass": true },
   "affordances": {
-    "checkReadiness": "asc versions check-readiness --version-id 74ed4466-...",
-    "listLocalizations": "asc version-localizations list --version-id 74ed4466-...",
-    "submit": "asc versions submit --version-id 74ed4466-..."
+    "checkReadiness": "asc versions check-readiness --version-id ver-1",
+    "listLocalizations": "asc version-localizations list --version-id ver-1",
+    "submit": "asc versions submit --version-id ver-1"
   }
 }
 ```

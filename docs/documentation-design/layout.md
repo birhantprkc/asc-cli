@@ -190,7 +190,7 @@ Every flag: [commands.md#testflight](../../commands.md#asc-testflight).
 
 ## Quick start
 ```bash
-asc testflight groups list --app-id 6450406024
+asc testflight groups list --app-id 1234567890
 asc testflight testers add --beta-group-id g-abc123 --email jane@example.com
 ```
 
@@ -204,7 +204,7 @@ asc testflight testers import --beta-group-id g-new --file testers.csv
 
 ### Open a public beta
 ```bash
-asc testflight groups create --app-id 6450406024 --name "Public Beta" --public-link-enabled
+asc testflight groups create --app-id 1234567890 --name "Public Beta" --public-link-enabled
 ```
 
 ## REST

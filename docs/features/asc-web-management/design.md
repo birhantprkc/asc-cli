@@ -209,9 +209,9 @@ Sources/ASCCommand/
 ```javascript
 {
   page: 'releases',       // current page
-  appId: '6743046579',    // selected app
-  appName: 'BezelBlend',
-  bundleId: 'com.onegai.bezelblend',
+  appId: '1234567890',    // selected app
+  appName: 'My App',   
+  bundleId: 'com.example.app',
   platform: 'IOS',        // IOS | MAC_OS
   apps: [...]             // all apps from account
 }

@@ -355,6 +355,7 @@ Docs follow `docs/documentation-design/README.md`: each fact has one home, and n
    - frontmatter `description:` — one sentence, what + "Use when …", ≤250 chars (it becomes the docs index row)
    - Quick start → Workflows → REST (paths + query-param mapping) → Gotchas → See also
    - **No** flag tables (`docs/commands.md` is generated), architecture, domain model listings, file maps or test snippets. Non-obvious reasons (Apple caps, multi-call workarounds) go in Gotchas as one-liners.
+   - Examples use placeholders (`1234567890`, `ver-1`, `sub-1`), never IDs, names or text copied from a real account.
    - A topic that doesn't fit goes into `docs/features/<feature>/<topic>.md` next to the README.
    - Example: `docs/features/testflight/README.md`.
 2. **`CHANGELOG.md`** — one bullet under `[Unreleased]`, ≤300 chars: starts with what the user types, says the effect (not the implementation), ends with `→ [docs](docs/features/<feature>/README.md)` and the PR link. Implementation detail goes in the PR.

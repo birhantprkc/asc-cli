@@ -9,8 +9,8 @@ Manage local iOS simulators: list, boot, and shut down. Streaming and interactio
 ## Quick start
 ```bash
 asc simulators list --output table
-asc simulators boot --udid CF65871E-B600-40CB-8B18-B6B7101D38E1
-asc simulators shutdown --udid CF65871E-B600-40CB-8B18-B6B7101D38E1
+asc simulators boot --udid SIM-UDID-1
+asc simulators shutdown --udid SIM-UDID-1
 ```
 
 ## Workflows
@@ -24,15 +24,15 @@ asc simulators list --booted --pretty
 {
   "data" : [
     {
-      "id" : "CF65871E-B600-40CB-8B18-B6B7101D38E1",
+      "id" : "SIM-UDID-1",
       "name" : "iPhone 16 Pro Max",
       "state" : "Booted",
       "runtime" : "com.apple.CoreSimulator.SimRuntime.iOS-18-2",
       "displayRuntime" : "iOS 18.2",
       "isBooted" : true,
       "affordances" : {
-        "shutdown" : "asc simulators shutdown --udid CF65871E-...",
-        "stream" : "asc simulators stream --udid CF65871E-...",
+        "shutdown" : "asc simulators shutdown --udid SIM-UDID-1",
+        "stream" : "asc simulators stream --udid SIM-UDID-1",
         "listSimulators" : "asc simulators list"
       }
     }

@@ -9,7 +9,7 @@ Read App Review's rejection messages and structured rejection reasons from the R
 ## Quick start
 
 ```bash
-asc review-submissions list --app-id 6787646042 --state UNRESOLVED_ISSUES
+asc review-submissions list --app-id 1234567890 --state UNRESOLVED_ISSUES
 asc iris resolution-center get --submission-id <id> --plain-text --pretty
 ```
 
@@ -19,7 +19,7 @@ asc iris resolution-center get --submission-id <id> --plain-text --pretty
 
 ```bash
 # 1. Which submission has issues? (official API, key auth, CI-safe)
-asc review-submissions list --app-id 6787646042 --state UNRESOLVED_ISSUES
+asc review-submissions list --app-id 1234567890 --state UNRESOLVED_ISSUES
 
 # 2. Which item did Apple reject?
 asc review-submissions items list --submission-id <id> --state REJECTED
@@ -38,28 +38,28 @@ A submission with issues, and each rejected item, carries a `getResolutionDetail
   "data" : [
     {
       "affordances" : {
-        "getSubmission" : "asc review-submissions get --submission-id 4d2a8cbf-…",
-        "listRejectedItems" : "asc review-submissions items list --state REJECTED --submission-id 4d2a8cbf-…"
+        "getSubmission" : "asc review-submissions get --submission-id sub-1",
+        "listRejectedItems" : "asc review-submissions items list --state REJECTED --submission-id sub-1"
       },
-      "id" : "925db205-9466-36fe-9e28-118db7ea1e4d",
+      "id" : "thread-1",
       "messages" : [
         {
-          "body" : "Hello, \n\nThank you for submitting the new app… Guideline 5.2.5 - Legal - Intellectual Property…",
+          "body" : "Hello, \n\nThank you for your submission… Guideline 2.1 - Performance - App Completeness…",
           "createdDate" : 805814892.99,
           "fromActor" : "APPLE",
-          "id" : "b813b928-…",
-          "threadId" : "925db205-…"
+          "id" : "msg-1",
+          "threadId" : "thread-1"
         }
       ],
       "rejectionReasons" : [
         {
-          "code" : "5.2.5",
-          "descriptionText" : "Legal: Intellectual Property - Apple Products (macOS)",
-          "id" : "2a68bda3-…-0",
-          "section" : "5.2.5"
+          "code" : "2.1",
+          "descriptionText" : "Performance: App Completeness",
+          "id" : "reason-1",
+          "section" : "2.1"
         }
       ],
-      "submissionId" : "4d2a8cbf-875e-4d75-b086-9fa47eb67796"
+      "submissionId" : "sub-1"
     }
   ]
 }

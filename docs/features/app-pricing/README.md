@@ -9,8 +9,8 @@ Set what an app costs, including making it free. Mirrors the IAP commands (`asc 
 ## Quick start
 
 ```bash
-asc apps price-points list --app-id 6792459661 --output table | head -4
-asc apps prices set --app-id 6792459661 --base-territory USA --price-point-id <id>
+asc apps price-points list --app-id 1234567890 --output table | head -4
+asc apps prices set --app-id 1234567890 --base-territory USA --price-point-id <id>
 ```
 
 ## Workflows
@@ -18,7 +18,7 @@ asc apps prices set --app-id 6792459661 --base-territory USA --price-point-id <i
 ### Make an app free or paid
 
 ```bash
-APP_ID=6792459661
+APP_ID=1234567890
 
 # Free app
 FREE=$(asc apps price-points list --app-id $APP_ID | jq -r '.data[] | select(.customerPrice == "0.0") | .id')
@@ -36,13 +36,13 @@ A price point carries the command to set it:
 ```json
 {
   "id" : "<id>",
-  "appId" : "6792459661",
+  "appId" : "1234567890",
   "territory" : "USA",
   "customerPrice" : "0.0",
   "proceeds" : "0.0",
   "affordances" : {
-    "listPricePoints" : "asc apps price-points list --app-id 6792459661 --territory USA",
-    "setPrice" : "asc apps prices set --app-id 6792459661 --base-territory USA --price-point-id <id>"
+    "listPricePoints" : "asc apps price-points list --app-id 1234567890 --territory USA",
+    "setPrice" : "asc apps prices set --app-id 1234567890 --base-territory USA --price-point-id <id>"
   }
 }
 ```
@@ -59,8 +59,8 @@ A price point carries the command to set it:
 The POST body is `{"base-territory": "USA", "price-point-id": "…"}`; camelCase `baseTerritory` / `pricePointId` is also accepted.
 
 ```bash
-curl 'http://localhost:8420/api/v1/apps/6792459661/price-points?territory=USA'
-curl -X POST http://localhost:8420/api/v1/apps/6792459661/prices/set \
+curl 'http://localhost:8420/api/v1/apps/1234567890/price-points?territory=USA'
+curl -X POST http://localhost:8420/api/v1/apps/1234567890/prices/set \
   -d '{"base-territory": "USA", "price-point-id": "<id>"}'
 ```
 
