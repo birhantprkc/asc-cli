@@ -129,4 +129,22 @@ struct SDKVersionRepositoryTests {
         try await repo.setBuild(versionId: "v-1", buildId: "build-42")
         // No error thrown = success
     }
+
+    @Test func `versions list includes every version beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> AppStoreVersionsResponse {
+            AppStoreVersionsResponse(
+                data: range.map { i in AppStoreVersion(type: .appStoreVersions, id: "item-\(i)", attributes: .init(platform: .ios, versionString: "1.\(i)", appStoreState: .readyForSale)) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKVersionRepository(client: stub)
+        let result = try await repo.listVersions(appId: "app-1")
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }

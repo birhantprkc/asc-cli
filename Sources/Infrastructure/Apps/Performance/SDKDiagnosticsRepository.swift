@@ -10,11 +10,14 @@ public struct SDKDiagnosticsRepository: DiagnosticsRepository, @unchecked Sendab
 
     public func listSignatures(buildId: String, diagnosticType: DiagnosticType?) async throws -> [DiagnosticSignatureInfo] {
         let filterType = diagnosticType.flatMap { mapDiagnosticTypeFilter($0) }.map { [$0] }
-        let request = APIEndpoint.v1.builds.id(buildId).diagnosticSignatures.get(parameters: .init(
-            filterDiagnosticType: filterType
-        ))
-        let response = try await client.request(request)
-        return response.data.map { mapSignature($0, buildId: buildId) }
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.builds.id(buildId).diagnosticSignatures.get(parameters: .init(
+                filterDiagnosticType: filterType,
+                limit: 200
+            )),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).map { mapSignature($0, buildId: buildId) }
     }
 
     public func listLogs(signatureId: String) async throws -> [DiagnosticLogEntry] {

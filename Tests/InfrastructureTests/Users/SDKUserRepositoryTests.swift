@@ -191,4 +191,22 @@ struct SDKUserRepositoryTests {
 
         #expect(result[0].roles == [.admin])
     }
+
+    @Test func `users list includes every team member beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> UsersResponse {
+            UsersResponse(
+                data: range.map { i in AppStoreConnect_Swift_SDK.User(type: .users, id: "item-\(i)", attributes: .init(username: "u\(i)@example.com", roles: [.developer])) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKUserRepository(client: stub)
+        let result = try await repo.listUsers(role: nil)
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }

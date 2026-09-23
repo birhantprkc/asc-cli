@@ -9,11 +9,13 @@ public struct SDKCustomerReviewRepository: CustomerReviewRepository, @unchecked 
     }
 
     public func listReviews(appId: String) async throws -> [Domain.CustomerReview] {
-        let request = APIEndpoint.v1.apps.id(appId).customerReviews.get(
-            parameters: .init(sort: [.minuscreatedDate])
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.apps.id(appId).customerReviews.get(
+                parameters: .init(sort: [.minuscreatedDate], limit: 200)
+            ),
+            nextCursor: { $0.meta?.paging.nextCursor }
         )
-        let response = try await client.request(request)
-        return response.data.map { mapReview($0, appId: appId) }
+        return pages.flatMap(\.data).map { mapReview($0, appId: appId) }
     }
 
     public func getReview(reviewId: String) async throws -> Domain.CustomerReview {

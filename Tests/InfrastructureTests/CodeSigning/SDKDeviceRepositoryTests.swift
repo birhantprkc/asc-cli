@@ -56,4 +56,22 @@ struct SDKDeviceRepositoryTests {
 
         #expect(result[0].isEnabled == false)
     }
+
+    @Test func `devices list includes every device beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> DevicesResponse {
+            DevicesResponse(
+                data: range.map { i in AppStoreConnect_Swift_SDK.Device(type: .devices, id: "item-\(i)", attributes: .init(name: "D\(i)", platform: .ios, udid: "U\(i)", deviceClass: .iphone, status: .enabled)) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKDeviceRepository(client: stub)
+        let result = try await repo.listDevices(platform: nil)
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }

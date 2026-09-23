@@ -13,11 +13,14 @@ public struct SDKUserRepository: UserRepository, @unchecked Sendable {
         let filterRole = role.flatMap {
             APIEndpoint.V1.Users.GetParameters.FilterRoles(rawValue: $0.rawValue)
         }
-        let request = APIEndpoint.v1.users.get(parameters: .init(
-            filterRoles: filterRole.map { [$0] }
-        ))
-        let response = try await client.request(request)
-        return response.data.map(mapTeamMember)
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.users.get(parameters: .init(
+                filterRoles: filterRole.map { [$0] },
+                limit: 200
+            )),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).map(mapTeamMember)
     }
 
     public func updateUser(id: String, roles: [Domain.UserRole]) async throws -> Domain.TeamMember {

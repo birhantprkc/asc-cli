@@ -11,19 +11,23 @@ public struct SDKProfileRepository: ProfileRepository, @unchecked Sendable {
     public func listProfiles(bundleIdId: String?, profileType: Domain.ProfileType?) async throws -> [Domain.Profile] {
         if let bundleIdId {
             // Use the bundle ID relationship endpoint for server-side filtering
-            let response = try await client.request(
-                APIEndpoint.v1.bundleIDs.id(bundleIdId).profiles.get()
+            let pages = try await client.requestAllPages(
+                APIEndpoint.v1.bundleIDs.id(bundleIdId).profiles.get(limit: 200),
+                nextCursor: { $0.meta?.paging.nextCursor }
             )
-            return response.data.map { mapProfile($0, bundleIdId: bundleIdId) }
+            return pages.flatMap(\.data).map { mapProfile($0, bundleIdId: bundleIdId) }
         } else {
             let filterType = profileType.flatMap {
                 APIEndpoint.V1.Profiles.GetParameters.FilterProfileType(rawValue: $0.rawValue)
             }
-            let request = APIEndpoint.v1.profiles.get(parameters: .init(
-                filterProfileType: filterType.map { [$0] }
-            ))
-            let response = try await client.request(request)
-            return response.data.map { sdkProfile in
+            let pages = try await client.requestAllPages(
+                APIEndpoint.v1.profiles.get(parameters: .init(
+                    filterProfileType: filterType.map { [$0] },
+                    limit: 200
+                )),
+                nextCursor: { $0.meta?.paging.nextCursor }
+            )
+            return pages.flatMap(\.data).map { sdkProfile in
                 let parentId = sdkProfile.relationships?.bundleID?.data?.id ?? ""
                 return mapProfile(sdkProfile, bundleIdId: parentId)
             }

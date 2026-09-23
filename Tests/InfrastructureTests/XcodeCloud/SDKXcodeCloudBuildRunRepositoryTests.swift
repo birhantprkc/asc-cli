@@ -84,4 +84,22 @@ struct SDKXcodeCloudBuildRunRepositoryTests {
         #expect(result.executionProgress == .pending)
         #expect(result.workflowId == "wf-1")
     }
+
+    @Test func `build runs list includes every run beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> CiBuildRunsResponse {
+            CiBuildRunsResponse(
+                data: range.map { i in makeSDKBuildRun(id: "item-\(i)") },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKXcodeCloudBuildRunRepository(client: stub)
+        let result = try await repo.listBuildRuns(workflowId: "wf-1")
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }

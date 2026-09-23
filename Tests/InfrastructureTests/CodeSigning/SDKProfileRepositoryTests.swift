@@ -59,4 +59,40 @@ struct SDKProfileRepositoryTests {
 
         #expect(stub.voidRequestCalled == true)
     }
+
+    @Test func `profiles list for a bundle id includes every profile beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> ProfilesWithoutIncludesResponse {
+            ProfilesWithoutIncludesResponse(
+                data: range.map { i in AppStoreConnect_Swift_SDK.Profile(type: .profiles, id: "item-\(i)", attributes: .init(name: "P\(i)", profileType: .iosAppStore, profileState: .active)) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKProfileRepository(client: stub)
+        let result = try await repo.listProfiles(bundleIdId: "bid-1", profileType: nil)
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
+
+    @Test func `profiles list includes every profile beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> ProfilesResponse {
+            ProfilesResponse(
+                data: range.map { i in AppStoreConnect_Swift_SDK.Profile(type: .profiles, id: "item-\(i)", attributes: .init(name: "P\(i)", profileType: .iosAppStore, profileState: .active)) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKProfileRepository(client: stub)
+        let result = try await repo.listProfiles(bundleIdId: nil, profileType: nil)
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }

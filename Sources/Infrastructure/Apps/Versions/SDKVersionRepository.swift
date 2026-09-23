@@ -10,9 +10,11 @@ public struct SDKVersionRepository: VersionRepository, @unchecked Sendable {
     }
 
     public func listVersions(appId: String) async throws -> [Domain.AppStoreVersion] {
-        let request = APIEndpoint.v1.apps.id(appId).appStoreVersions.get()
-        let response = try await client.request(request)
-        return response.data.compactMap { mapVersion($0, appId: appId) }
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.apps.id(appId).appStoreVersions.get(parameters: .init(limit: 200)),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).compactMap { mapVersion($0, appId: appId) }
     }
 
     public func getVersion(id: String) async throws -> Domain.AppStoreVersion {

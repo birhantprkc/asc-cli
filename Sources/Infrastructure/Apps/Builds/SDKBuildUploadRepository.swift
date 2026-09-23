@@ -90,9 +90,11 @@ public struct SDKBuildUploadRepository: BuildUploadRepository, @unchecked Sendab
     }
 
     public func listBuildUploads(appId: String) async throws -> [Domain.BuildUpload] {
-        let request = APIEndpoint.v1.apps.id(appId).buildUploads.get()
-        let response = try await client.request(request)
-        return response.data.map { mapBuildUpload($0, appId: appId) }
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.apps.id(appId).buildUploads.get(parameters: .init(limit: 200)),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).map { mapBuildUpload($0, appId: appId) }
     }
 
     public func getBuildUpload(id: String) async throws -> Domain.BuildUpload {

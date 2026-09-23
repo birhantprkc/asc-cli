@@ -9,9 +9,11 @@ public struct SDKXcodeCloudBuildRunRepository: XcodeCloudBuildRunRepository, @un
     }
 
     public func listBuildRuns(workflowId: String) async throws -> [XcodeCloudBuildRun] {
-        let request = APIEndpoint.v1.ciWorkflows.id(workflowId).buildRuns.get()
-        let response = try await client.request(request)
-        return response.data.map { mapBuildRun($0, workflowId: workflowId) }
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.ciWorkflows.id(workflowId).buildRuns.get(parameters: .init(limit: 200)),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).map { mapBuildRun($0, workflowId: workflowId) }
     }
 
     public func getBuildRun(id: String) async throws -> XcodeCloudBuildRun {

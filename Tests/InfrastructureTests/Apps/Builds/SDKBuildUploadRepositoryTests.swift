@@ -126,4 +126,22 @@ struct SDKBuildUploadRepositoryTests {
             )
         )
     }
+
+    @Test func `build uploads list includes every upload beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> BuildUploadsResponse {
+            BuildUploadsResponse(
+                data: range.map { i in makeSdkBuildUpload(id: "item-\(i)", state: .complete) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKBuildUploadRepository(client: stub)
+        let result = try await repo.listBuildUploads(appId: "app-1")
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }

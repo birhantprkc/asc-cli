@@ -185,4 +185,22 @@ struct SDKCustomerReviewRepositoryDeleteResponseTests {
 
         #expect(stub.voidRequestCalled)
     }
+
+    @Test func `reviews list includes every review beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> CustomerReviewsResponse {
+            CustomerReviewsResponse(
+                data: range.map { i in CustomerReview(type: .customerReviews, id: "item-\(i)", attributes: .init(rating: 5)) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKCustomerReviewRepository(client: stub)
+        let result = try await repo.listReviews(appId: "app-1")
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }
