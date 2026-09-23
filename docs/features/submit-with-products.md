@@ -84,6 +84,17 @@ Error: Apple refused the review submission: This resource cannot be reviewed, pl
 
 Apple server errors (5xx) are shown as they are.
 
+What each common refusal needs, and whether `asc` can fix it:
+
+| Reason | Fix |
+|--------|-----|
+| `contentRightsDeclaration` required | `asc apps update --app-id <id> --content-rights-declaration DOES_NOT_USE_THIRD_PARTY_CONTENT` (or `USES_THIRD_PARTY_CONTENT`) |
+| Pricing not set | App pricing is in the public API (`/v1/appPriceSchedules`) but `asc` has no command yet — set it in App Store Connect (Pricing and Availability) |
+| App Privacy data usages not published | **No public API.** App Privacy answers exist only behind the App Store Connect web session (the `/v1/appDataUsages` path in the error isn't reachable with an API key) — publish them in App Store Connect (App Privacy) |
+| Required screenshot (e.g. `APP_IPAD_PRO_3GEN_129`) missing | `asc screenshot-sets` / `asc screenshots` for that display type |
+
+Apple sometimes answers `500 UNEXPECTED_ERROR` instead of this refusal when adding an app version to an older, empty draft; a fresh draft returns the real reasons.
+
 ### `asc iap versions list` · `asc subscriptions versions list` · `asc subscription-groups versions list`
 
 ```
