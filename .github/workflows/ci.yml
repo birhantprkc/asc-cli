@@ -21,6 +21,9 @@ jobs:
       - name: Check links, budgets and changelog
         run: python3 scripts/check-docs.py --strict
 
+      - name: Changelog release scripts
+        run: scripts/test-changelog-release.sh
+
   test:
     name: Build & Test
     runs-on: macos-15

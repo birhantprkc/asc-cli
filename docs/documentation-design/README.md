@@ -143,7 +143,7 @@ Type names, repository methods, SDK calls and file paths go in the PR, their one
 `CHANGELOG.md` is tier 1, so it has to stay small. Humans only read the top, but an agent adding an entry loads the whole file, and at 1,049 lines that means paying for 0.1.0 on every change.
 
 - `CHANGELOG.md` holds `[Unreleased]` plus the **current minor** (today 0.18.x, ~50 lines), then an "Older releases" list linking each `docs/changelog/<minor>.md`.
-- **When a new minor is released** (0.18 → 0.19), the 0.18.x sections move unchanged into `docs/changelog/0.18.md` and one link is added. This happens once per minor, not every release, and `scripts/changelog-rollover.py`, run by `scripts/promote-changelog.sh` in the release workflow, does it, so nobody decides anything.
+- **When a new minor is released** (0.18 → 0.19), the 0.18.x sections move unchanged into `docs/changelog/0.18.md` and one link is added. This happens once per minor, not every release, and `scripts/changelog-rollover.py`, run by `scripts/promote-changelog.sh` in the release workflow, does it, so nobody decides anything. `promote-changelog.sh` also fills an empty release with "Bug fixes and improvements." before the rollover, and `scripts/test-changelog-release.sh` (run in CI) covers patch and minor releases with and without entries.
 - **Archived sections are moved, never rewritten.** Past entries keep their original wording, and one version's history lives in exactly one place.
 - Git history and GitHub Releases keep everything too. The archive is for people who browse, not a second source of truth.
 
