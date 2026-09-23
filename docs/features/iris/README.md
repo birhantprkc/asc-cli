@@ -20,8 +20,8 @@ asc iris apps create --name "My App" --bundle-id com.example.app --sku MYSKU --p
 
 Three ways to get a session, resolved in this order:
 
-1. **`ASC_IRIS_COOKIES` environment variable** — raw cookie string, for CI or an explicit override.
-2. **Apple ID login** (`asc iris auth login`) — a saved session.
+1. **Apple ID login** (`asc iris auth login`) — a saved, unexpired session.
+2. **`ASC_IRIS_COOKIES` environment variable** — raw cookie string, for CI. It does not override a live saved session.
 3. **Browser cookies** — auto-extracted from Chrome, Safari or Firefox after you log in to [appstoreconnect.apple.com](https://appstoreconnect.apple.com).
 
 ### Apple ID login (SRP + 2FA)
@@ -33,8 +33,7 @@ asc iris auth login --apple-id dev@example.com --interactive
 # Or two steps: login writes pending state, verify-code finishes it
 asc iris auth login --apple-id dev@example.com
 asc iris auth verify-code 123456
-# Logged in as dev@example.com (Team: My Studio LLC, providerID 12345)
-# Session saved to ~/.asc/iris/session.json
+# → JSON summary (userEmail, teamId, expiresAt); session saved to ~/.asc/iris/session.json
 
 asc iris status          # shows where the session came from and how many cookies
 asc iris auth logout     # clears the saved session
@@ -69,7 +68,7 @@ asc iris apps create \
     --pretty
 
 # Multi-platform, or a different primary locale
-asc iris apps create --name "My App" --bundle-id com.example.app --sku MYSKU --platforms IOS MAC_OS --version 2.0
+asc iris apps create --name "My App" --bundle-id com.example.app --sku MYSKU --platforms IOS --platforms MAC_OS --version 2.0
 asc iris apps create --name "我的应用" --bundle-id com.example.app --sku MYSKU --primary-locale zh-Hans
 
 # 3. Continue with public API commands
@@ -77,13 +76,14 @@ asc versions list --app-id <id-from-step-2>
 asc app-infos list --app-id <id-from-step-2>
 ```
 
-`asc iris status` output:
+`asc iris status` output (each item inside `{"data": [...]}`):
 
 ```json
 {
   "affordances" : {
     "createApp" : "asc iris apps create --name <name> --bundle-id <id> --sku <sku>",
-    "listApps" : "asc iris apps list"
+    "listApps" : "asc iris apps list",
+    "submitIAP" : "asc iris iap-submissions create --iap-id <iap-id>"
   },
   "cookieCount" : 5,
   "source" : "browser"

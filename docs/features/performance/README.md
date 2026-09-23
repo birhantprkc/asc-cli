@@ -80,7 +80,7 @@ Each log entry has device, OS and app version, and a `callStackSummary` of the t
 
 ## Gotchas
 
-- `perf-metrics list` takes exactly one of `--app-id` or `--build-id`.
+- `perf-metrics list` requires `--app-id` or `--build-id`; if both are given, `--build-id` is used.
 - Diagnostics are per build only; there is no app-level `diagnostics list`.
 - Metric and log IDs are synthetic (`{parentId}-{category}-{metric}`, `{signatureId}-{product}-{log}`); they are stable for display but are not Apple IDs.
 - No REST endpoints yet; these commands are CLI-only.

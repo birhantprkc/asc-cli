@@ -7,7 +7,7 @@
 - [Command Tree](#command-tree)
 - [Agent-First Output Flow](#agent-first-output-flow)
 - [Component Tables](#component-tables)
-- [Files Checklist](#files-checklist)
+- [Files to Create/Modify](#files-to-createmodify)
 
 ---
 

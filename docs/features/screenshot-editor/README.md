@@ -10,7 +10,7 @@ A browser-based screenshot compositor. Design screenshots (background + device b
 
 ```bash
 open homepage/editor/index.html          # design, then click Export ZIP
-asc screenshots import --version-id <VERSION_ID> --from ./export.zip
+asc screenshots import --version-id <VERSION_ID> --from ./screenshots.zip
 ```
 
 ## Workflows
@@ -25,10 +25,10 @@ asc versions list --app-id <APP_ID> --output table
 # 2. Design screenshots in the visual editor (no server required)
 open homepage/editor/index.html
 #    → compose screenshots for en-US, ja, zh-Hans
-#    → click Export ZIP → saves export.zip
+#    → click Export ZIP → saves screenshots.zip
 
 # 3. Upload to App Store Connect
-asc screenshots import --version-id <VERSION_ID> --from ./export.zip --output table
+asc screenshots import --version-id <VERSION_ID> --from ./screenshots.zip --output table
 
 # 4. Verify
 asc screenshot-sets list --localization-id <LOC_ID> --output table
@@ -56,7 +56,7 @@ The editor has three panels: localizations and screenshot slots on the left, the
 ### Export ZIP format
 
 ```
-export.zip
+screenshots.zip
 ├── manifest.json
 ├── en-US/
 │   ├── 1.png
@@ -91,7 +91,7 @@ export.zip
 
 ## Gotchas
 
-- `asc screenshots import` reads only `displayType` and `file`; `device`, `background` and `texts` are editor metadata kept for re-editing.
+- `asc screenshots import` reads only `displayType`, `file` and `order`; `device`, `background` and `texts` are editor metadata kept for re-editing.
 - `file` paths are relative to the ZIP root.
 - Import reuses the existing screenshot endpoints; nothing is exposed over REST for it.
 

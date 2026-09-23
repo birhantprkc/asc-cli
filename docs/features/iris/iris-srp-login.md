@@ -49,8 +49,9 @@ Performs SRP `init` + `complete`. If the account succeeds without 2FA, persists 
 Flags:
 - `--apple-id <email>` (required)
 - `--password <pwd>` (optional; prompts if omitted, never echoed)
-- `--method trusted-device | phone` (optional; default = trusted-device. Picks 2FA delivery channel when more than one is available.)
-- `--trust` (optional, default true; sets `rememberMe` so subsequent logins skip 2FA on the same machine)
+- `--interactive` (optional; prompts for the 2FA code on stdin in the same process instead of writing pending state for `verify-code`)
+
+`--method` (2FA channel) and `--trust` were part of the original plan but are not implemented; see the [command reference](../../commands.md#asc-iris) for the current flags.
 
 Examples:
 ```bash
@@ -59,12 +60,9 @@ asc iris auth login --apple-id dev@example.com
 # 2FA required. Code sent to your trusted devices.
 # Run: asc iris auth verify-code <6-digit-code>
 
-asc iris auth login --apple-id dev@example.com --method phone
-# Password: ************
-# 2FA required. Code sent to ***-***-1234.
 ```
 
-### `asc iris auth verify-code <code> [--trust]`
+### `asc iris auth verify-code <code>`
 
 Submits the 2FA code, hits the trust endpoint, then `olympus/v1/session`, then persists the full session.
 

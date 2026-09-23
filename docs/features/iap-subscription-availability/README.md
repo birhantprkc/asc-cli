@@ -44,7 +44,7 @@ asc app-availability get --app-id <id> --pretty
 }
 ```
 
-`contentStatuses` explains why a territory is blocked: `AVAILABLE`, `MISSING_RATING`, `CANNOT_SELL_RESTRICTED_RATING`, `CANNOT_SELL_GAMBLING`, `BRAZIL_REQUIRED_TAX_ID`, `ICP_NUMBER_MISSING`, and 30+ more.
+`contentStatuses` explains why a territory is blocked: `AVAILABLE`, `MISSING_RATING`, `CANNOT_SELL_RESTRICTED_RATING`, `CANNOT_SELL_GAMBLING`, `BRAZIL_REQUIRED_TAX_ID`, `ICP_NUMBER_MISSING`, and 27 more (33 in total).
 
 ### Set IAP and subscription availability
 
@@ -71,7 +71,7 @@ IAP and subscription availability lists territory IDs with currency codes:
   "territories": [ { "id": "USA", "currency": "USD" }, { "id": "CHN", "currency": "CNY" } ],
   "affordances": {
     "getAvailability": "asc iap-availability get --iap-id iap-42",
-    "createAvailability": "asc iap-availability create --iap-id iap-42 ...",
+    "createAvailability": "asc iap-availability create --iap-id iap-42",
     "listTerritories": "asc territories list"
   }
 }

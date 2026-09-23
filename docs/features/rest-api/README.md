@@ -18,7 +18,7 @@ curl http://localhost:8420/api/v1/apps
 
 ### Discover and navigate
 
-Start at `GET /api/v1`. It lists every top-level resource:
+Start at `GET /api/v1`. It lists every top-level resource (sample trimmed):
 
 ```json
 {

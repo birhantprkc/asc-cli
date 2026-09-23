@@ -82,7 +82,7 @@ asc iris resolution-center get --submission-id <id> --out ./rejection
 Query-param mapping: `--plain-text` → `?plain-text=true`.
 
 ```bash
-curl "http://127.0.0.1:8080/api/v1/iris/review-submissions/<id>/resolution-center?plain-text=true"
+curl "http://127.0.0.1:8420/api/v1/iris/review-submissions/<id>/resolution-center?plain-text=true"
 ```
 
 Discovery: `GET /api/v1/review-submissions/:id` includes `_links.getResolutionDetails` when the submission is `UNRESOLVED_ISSUES`.
