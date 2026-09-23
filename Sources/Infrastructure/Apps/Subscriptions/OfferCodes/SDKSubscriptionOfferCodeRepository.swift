@@ -189,9 +189,10 @@ public struct SDKSubscriptionOfferCodeRepository: SubscriptionOfferCodeRepositor
     // MARK: - Prices
 
     public func listPrices(offerCodeId: String) async throws -> [Domain.SubscriptionOfferCodePrice] {
-        // One price per territory — follow every page to get all 175.
+        // One price per territory — follow every page to get all 175. `include` makes Apple
+        // return each price's territory and price point linkage, which the mapper reads.
         let pages = try await client.requestAllPages(
-            APIEndpoint.v1.subscriptionOfferCodes.id(offerCodeId).prices.get(parameters: .init(limit: 200)),
+            APIEndpoint.v1.subscriptionOfferCodes.id(offerCodeId).prices.get(parameters: .init(limit: 200, include: [.territory, .subscriptionPricePoint])),
             nextCursor: { $0.meta?.paging.nextCursor }
         )
         return pages.flatMap(\.data).map { mapPrice($0, offerCodeId: offerCodeId) }

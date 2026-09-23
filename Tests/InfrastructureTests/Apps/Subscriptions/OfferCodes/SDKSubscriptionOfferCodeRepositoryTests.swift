@@ -438,4 +438,16 @@ struct SDKSubscriptionOfferCodeRepositoryTests {
         #expect(result.last?.territory == "T174")
         #expect(result.last?.subscriptionPricePointId == "pp-174")
     }
+
+    @Test func `offer code prices ask Apple for each price's territory and price point`() async throws {
+        // Apple only links each price to its territory and price point when asked via `include`.
+        let stub = StubAPIClient()
+        stub.willReturn(SubscriptionOfferCodePricesResponse(data: [], links: .init(this: "")))
+
+        let repo = SDKSubscriptionOfferCodeRepository(client: stub)
+        _ = try await repo.listPrices(offerCodeId: "oc-1")
+
+        let query = Dictionary(uniqueKeysWithValues: (stub.lastQuery ?? []).map { ($0.0, $0.1 ?? "") })
+        #expect(query["include"] == "territory,subscriptionPricePoint")
+    }
 }
