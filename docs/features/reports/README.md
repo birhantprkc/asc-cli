@@ -1,68 +1,40 @@
-# Sales & Finance Reports
+---
+description: Download sales, finance and analytics reports from App Store Connect, and roll daily sales into a summary. Use when you need downloads, proceeds or usage data for an app.
+---
 
-Download sales and trends data and financial reports from App Store Connect.
+# Sales, Finance & Analytics Reports
 
-## CLI Usage
+Sales and trends data, financial reports, and the multi-step analytics report flow. Every flag: [sales-reports](../../commands.md#asc-sales-reports), [finance-reports](../../commands.md#asc-finance-reports), [analytics-reports](../../commands.md#asc-analytics-reports).
 
-### Sales Reports
+## Quick start
 
 ```bash
-asc sales-reports download \
-  [--vendor-number <number>] \
-  --report-type <type> \
-  --sub-type <sub-type> \
-  --frequency <frequency> \
-  [--report-date <date>]
+asc auth update --vendor-number 88012345   # once; found in ASC → Payments and Financial Reports
+asc sales-reports download --report-type SALES --sub-type SUMMARY --frequency DAILY --report-date 2024-01-15 --pretty
+asc sales-reports summary --from 2026-05-13 --to 2026-05-18 --pretty
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--vendor-number` | No | Auto-resolved from active account if saved via `asc auth login --vendor-number` or `asc auth update --vendor-number`. Explicit value overrides. |
-| `--report-type` | Yes | `SALES`, `PRE_ORDER`, `NEWSSTAND`, `SUBSCRIPTION`, `SUBSCRIPTION_EVENT`, `SUBSCRIBER`, `SUBSCRIPTION_OFFER_CODE_REDEMPTION`, `INSTALLS`, `FIRST_ANNUAL`, `WIN_BACK_ELIGIBILITY` |
-| `--sub-type` | Yes | `SUMMARY`, `DETAILED`, `SUMMARY_INSTALL_TYPE`, `SUMMARY_TERRITORY`, `SUMMARY_CHANNEL` |
-| `--frequency` | Yes | `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY` |
-| `--report-date` | **DAILY: No; WEEKLY/MONTHLY/YEARLY: Yes** | Report date (e.g. `2024-01-15` for daily, `2024-03-02` for weekly — must be a Sunday, `2024-01` for monthly). Optional only for DAILY (omit to get latest). Required for all other frequencies. |
-| `--version` | No | Report schema version (e.g. `1_1` for `SALES/SUMMARY/DAILY`). Omit to use Apple's default. Invalid values surface as `PARAMETER_ERROR.INVALID` with the latest supported version. |
-| `--output` | No | `json` (default), `table` |
-| `--pretty` | No | Pretty-print JSON output |
+## Workflows
 
-**Examples:**
+### Download sales reports
 
 ```bash
-# Daily sales summary
-asc sales-reports download \
-  --vendor-number 123456 \
-  --report-type SALES \
-  --sub-type SUMMARY \
-  --frequency DAILY \
-  --report-date 2024-01-15
-
 # Monthly subscription report
-asc sales-reports download \
-  --vendor-number 123456 \
-  --report-type SUBSCRIPTION \
-  --sub-type SUMMARY \
-  --frequency MONTHLY \
-  --report-date 2024-01
+asc sales-reports download --report-type SUBSCRIPTION --sub-type SUMMARY \
+  --frequency MONTHLY --report-date 2024-01
 
-# Weekly installs report (--report-date required for WEEKLY)
-asc sales-reports download \
-  --vendor-number 123456 \
-  --report-type INSTALLS \
-  --sub-type SUMMARY \
-  --frequency WEEKLY \
-  --report-date 2024-01-07 \
-  --output table
+# Weekly installs report as a table
+asc sales-reports download --report-type INSTALLS --sub-type SUMMARY \
+  --frequency WEEKLY --report-date 2024-01-07 --output table
 ```
 
-**JSON output:**
+Each row is the report's TSV columns as keys, so fields vary by report type:
 
 ```json
 {
   "data" : [
     {
       "Provider" : "APPLE",
-      "Provider Country" : "US",
       "SKU" : "com.example.app",
       "Title" : "My App",
       "Units" : "10",
@@ -73,41 +45,11 @@ asc sales-reports download \
 }
 ```
 
-**Table output:**
+Report types: `SALES`, `PRE_ORDER`, `NEWSSTAND`, `SUBSCRIPTION`, `SUBSCRIPTION_EVENT`, `SUBSCRIBER`, `SUBSCRIPTION_OFFER_CODE_REDEMPTION`, `INSTALLS`, `FIRST_ANNUAL`, `WIN_BACK_ELIGIBILITY`. Sub-types: `SUMMARY`, `DETAILED`, `SUMMARY_INSTALL_TYPE`, `SUMMARY_TERRITORY`, `SUMMARY_CHANNEL`.
 
-```
-Currency of Proceeds  Developer Proceeds  Provider  Provider Country  SKU              Title   Units
---------------------  ------------------  --------  ----------------  ---------------  ------  -----
-USD                   6.99                APPLE     US                com.example.app  My App  10
-```
+### Summarize a date range
 
-### Sales Summary
-
-```bash
-asc sales-reports summary --from <YYYY-MM-DD> --to <YYYY-MM-DD>
-```
-
-Aggregates daily Sales reports across a date range into a single rollup.
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--vendor-number` | No | Auto-resolved from active account. |
-| `--from` | Yes | Start date inclusive (`YYYY-MM-DD`). |
-| `--to` | Yes | End date inclusive (`YYYY-MM-DD`). |
-| `--pretty` | No | Pretty-print JSON. |
-
-**Bucketing rules:**
-
-| Metric | Formula |
-|--------|---------|
-| `downloads` | Sum of `Units` where `Product Type Identifier` starts with `1` (iOS) or `F` (macOS). Excludes `3F` (Apple Watch redownloads), `7*` (updates), `IA*` (in-app purchases). |
-| `updates` | Sum of `Units` where PTI starts with `7`. |
-| `inAppPurchases` | Sum of `Units` where PTI starts with `IA`. |
-| `payers` | Distinct count of SKUs where `Customer Price > 0`. |
-| `customerSpend` | Map of `Customer Currency` → sum of `Customer Price × Units`. Kept per-currency because the column is in customer-local currency — summing across currencies would be mathematically meaningless. |
-| `proceeds` | Map of `Currency of Proceeds` → sum of `Developer Proceeds × Units`. The developer's actual payout, per proceeds currency. |
-
-**Example:**
+`summary` aggregates daily Sales reports into one rollup:
 
 ```bash
 asc sales-reports summary --from 2026-05-13 --to 2026-05-18 --pretty
@@ -124,346 +66,59 @@ asc sales-reports summary --from 2026-05-13 --to 2026-05-18 --pretty
 # }
 ```
 
-**Note on data freshness:** This command reads from the same `/v1/salesReports` TSV pipeline as `download`. Apple amends daily reports for up to 5 days. For most-recent-day numbers matching the App Store Connect mobile app's "Trends" view in real-time, the public API is not the right source (mobile uses an internal iris endpoint).
+| Metric | How it's counted |
+|---|---|
+| `downloads` | Sum of `Units` where `Product Type Identifier` starts with `1` (iOS) or `F` (macOS); excludes `3F` (Apple Watch redownloads), `7*` (updates), `IA*` (in-app purchases) |
+| `updates` | Sum of `Units` where PTI starts with `7` |
+| `inAppPurchases` | Sum of `Units` where PTI starts with `IA` |
+| `payers` | Distinct SKUs where `Customer Price > 0` |
+| `customerSpend` | `Customer Currency` → sum of `Customer Price × Units` |
+| `proceeds` | `Currency of Proceeds` → sum of `Developer Proceeds × Units` (your actual payout) |
 
-### Finance Reports
-
-```bash
-asc finance-reports download \
-  [--vendor-number <number>] \
-  --report-type <type> \
-  --region-code <code> \
-  --report-date <date>
-```
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--vendor-number` | No | Auto-resolved from active account if saved. Explicit value overrides. |
-| `--report-type` | Yes | `FINANCIAL`, `FINANCE_DETAIL` |
-| `--region-code` | Yes | Region code (e.g. `US`, `EU`, `JP`) |
-| `--report-date` | Yes | Report date (e.g. `2024-01`) |
-| `--output` | No | `json` (default), `table` |
-| `--pretty` | No | Pretty-print JSON output |
-
-**Examples:**
+### Download finance reports
 
 ```bash
-# Financial summary for US region
-asc finance-reports download \
-  --vendor-number 123456 \
-  --report-type FINANCIAL \
-  --region-code US \
-  --report-date 2024-01
-
-# Detailed finance report for EU
-asc finance-reports download \
-  --vendor-number 123456 \
-  --report-type FINANCE_DETAIL \
-  --region-code EU \
-  --report-date 2024-01 \
-  --pretty
+asc finance-reports download --report-type FINANCIAL --region-code US --report-date 2024-01
+asc finance-reports download --report-type FINANCE_DETAIL --region-code EU --report-date 2024-01 --pretty
 ```
 
-## Typical Workflow
+### Analytics reports
+
+Analytics use a request → report → instance → segment chain and return JSON (not TSV):
 
 ```bash
-# 0. Save vendor number once (found in ASC → Payments and Financial Reports)
-asc auth update --vendor-number 88012345
-
-# 1. Download yesterday's sales data (vendor number auto-resolved)
-asc sales-reports download \
-  --report-type SALES \
-  --sub-type SUMMARY \
-  --frequency DAILY \
-  --report-date 2024-01-15 \
-  --pretty
-
-# 2. Check monthly subscription metrics
-asc sales-reports download \
-  --report-type SUBSCRIPTION \
-  --sub-type SUMMARY \
-  --frequency MONTHLY \
-  --report-date 2024-01 \
-  --pretty
-
-# 3. Download financial report for proceeds
-asc finance-reports download \
-  --report-type FINANCIAL \
-  --region-code US \
-  --report-date 2024-01 \
-  --pretty
-```
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  ASCCommand                                             │
-│  ┌───────────────────┐  ┌────────────────────────────┐  │
-│  │ SalesReportsCmd   │  │ FinanceReportsCmd          │  │
-│  │  └─ download      │  │  └─ download               │  │
-│  └───────────────────┘  └────────────────────────────┘  │
-│         │  ReportOutputHelper (TSV → JSON/table)        │
-├─────────┼───────────────────────────────────────────────┤
-│  Domain │                                               │
-│  ┌──────┴──────────────────────────────────────────┐    │
-│  │ ReportRepository (@Mockable)                    │    │
-│  │  downloadSalesReport() -> [[String: String]]    │    │
-│  │  downloadFinanceReport() -> [[String: String]]  │    │
-│  ├─────────────────────────────────────────────────┤    │
-│  │ SalesReportType (10)  SalesReportSubType (5)    │    │
-│  │ ReportFrequency (4)   FinanceReportType (2)     │    │
-│  └─────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────┤
-│  Infrastructure                                         │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │ SDKReportRepository                             │    │
-│  │  1. client.request(salesReports.get(...))       │    │
-│  │  2. Data.gunzipped() → TSV string               │    │
-│  │  3. TSVParser.parse() → [[String: String]]      │    │
-│  └─────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────┘
-```
-
-Reports are gzip-compressed TSV downloads (not JSON), so Infrastructure decompresses and parses before returning structured data.
-
-## Domain Models
-
-### `SalesReportType` (enum, 10 cases)
-
-`SALES`, `PRE_ORDER`, `NEWSSTAND`, `SUBSCRIPTION`, `SUBSCRIPTION_EVENT`, `SUBSCRIBER`, `SUBSCRIPTION_OFFER_CODE_REDEMPTION`, `INSTALLS`, `FIRST_ANNUAL`, `WIN_BACK_ELIGIBILITY`
-
-### `SalesReportSubType` (enum, 5 cases)
-
-`SUMMARY`, `DETAILED`, `SUMMARY_INSTALL_TYPE`, `SUMMARY_TERRITORY`, `SUMMARY_CHANNEL`
-
-### `ReportFrequency` (enum, 4 cases)
-
-`DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`
-
-### `FinanceReportType` (enum, 2 cases)
-
-`FINANCIAL`, `FINANCE_DETAIL`
-
-### `ReportRepository` (protocol)
-
-```swift
-@Mockable
-public protocol ReportRepository: Sendable {
-    func downloadSalesReport(
-        vendorNumber: String,
-        reportType: SalesReportType,
-        subType: SalesReportSubType,
-        frequency: ReportFrequency,
-        reportDate: String?,
-        version: String?
-    ) async throws -> [[String: String]]
-
-    func downloadFinanceReport(
-        vendorNumber: String,
-        reportType: FinanceReportType,
-        regionCode: String,
-        reportDate: String
-    ) async throws -> [[String: String]]
-}
-```
-
-Reports return `[[String: String]]` — arrays of dictionaries where keys are TSV column headers. Columns vary by report type (50+ schemas), so dynamic dictionaries are used instead of fixed structs.
-
-## File Map
-
-### Sources
-
-```
-Sources/
-├── Domain/Reports/
-│   ├── SalesReportFilter.swift        # SalesReportType, SalesReportSubType, ReportFrequency
-│   ├── FinanceReportFilter.swift      # FinanceReportType
-│   ├── ReportRepository.swift         # @Mockable protocol (sales + finance)
-│   └── Analytics/
-│       ├── AnalyticsFilter.swift              # AnalyticsAccessType, AnalyticsCategory, AnalyticsGranularity
-│       ├── AnalyticsReportRequest.swift       # Request model + AffordanceProviding
-│       ├── AnalyticsReport.swift              # Report model + AffordanceProviding
-│       ├── AnalyticsReportInstance.swift       # Instance model + AffordanceProviding
-│       ├── AnalyticsReportSegment.swift        # Segment model + AffordanceProviding
-│       └── AnalyticsReportRepository.swift     # @Mockable protocol (6 methods)
-├── Infrastructure/
-│   ├── Reports/
-│   │   ├── SDKReportRepository.swift           # Gzip download + TSV parse
-│   │   ├── TSVParser.swift                     # Tab-separated values parser
-│   │   └── Analytics/
-│   │       └── SDKAnalyticsReportRepository.swift  # Analytics SDK adapter
-│   └── Client/
-│       └── DataExtensions.swift                # Data.gunzipped() via zlib
-└── ASCCommand/Commands/
-    ├── Reports/
-    │   ├── SalesReportsCommand.swift       # Parent: asc sales-reports
-    │   ├── SalesReportsDownload.swift      # asc sales-reports download
-    │   ├── FinanceReportsCommand.swift     # Parent: asc finance-reports
-    │   ├── FinanceReportsDownload.swift    # asc finance-reports download
-    │   ├── VendorNumberResolver.swift     # Auto-resolves vendor number from auth
-    │   └── ReportOutputHelper.swift        # JSON/table formatting
-    └── AnalyticsReports/
-        ├── AnalyticsReportsCommand.swift       # Parent: asc analytics-reports
-        ├── AnalyticsReportsRequest.swift       # asc analytics-reports request
-        ├── AnalyticsReportsList.swift          # asc analytics-reports list
-        ├── AnalyticsReportsDelete.swift        # asc analytics-reports delete
-        ├── AnalyticsReportsReportsList.swift   # asc analytics-reports reports
-        ├── AnalyticsReportsInstancesList.swift # asc analytics-reports instances
-        └── AnalyticsReportsSegmentsList.swift  # asc analytics-reports segments
-```
-
-### Tests
-
-```
-Tests/
-├── DomainTests/Reports/
-│   ├── ReportFilterTests.swift                     # Enum raw values + CLI init (26 tests)
-│   └── AnalyticsReportTests.swift                  # Analytics models + affordances (34 tests)
-├── InfrastructureTests/Reports/
-│   ├── SDKReportRepositoryTests.swift              # Gzip, TSV parsing (11 tests)
-│   └── SDKAnalyticsReportRepositoryTests.swift     # Analytics parent ID injection (7 tests)
-└── ASCCommandTests/Commands/
-    ├── Reports/
-    │   ├── SalesReportsDownloadTests.swift          # JSON + table + vendor resolution (7 tests)
-    │   └── FinanceReportsDownloadTests.swift        # JSON + table + vendor resolution (4 tests)
-    └── AnalyticsReports/
-        └── AnalyticsReportsTests.swift              # All 6 commands (6 tests)
-```
-
-### Wiring Files
-
-| File | Change |
-|------|--------|
-| `ASC.swift` | Registers `SalesReportsCommand`, `FinanceReportsCommand`, `AnalyticsReportsCommand` |
-| `ClientProvider.swift` | `makeReportRepository()`, `makeAnalyticsReportRepository()` |
-| `ClientFactory.swift` | `makeReportRepository(...)`, `makeAnalyticsReportRepository(...)` |
-| `MockRepositoryFactory.swift` | 4 analytics factory methods |
-
-## API Reference
-
-| Endpoint | SDK Call | Repository Method |
-|----------|---------|-------------------|
-| `GET /v1/salesReports` | `APIEndpoint.v1.salesReports.get(parameters:)` | `downloadSalesReport(...)` |
-| `GET /v1/financeReports` | `APIEndpoint.v1.financeReports.get(parameters:)` | `downloadFinanceReport(...)` |
-
-Sales and finance endpoints return gzip-compressed TSV data (`Request<Data>`). The SDK's `APIProvider.request()` returns raw `Data` when `T` is `Data` (line 343 of APIProvider.swift: `if let data = data as? T`). Analytics endpoints return standard JSON responses.
-
-## Testing
-
-```swift
-@Test func `downloads sales report and outputs JSON with row data`() async throws {
-    let mockRepo = MockReportRepository()
-    given(mockRepo).downloadSalesReport(
-        vendorNumber: .any, reportType: .any, subType: .any,
-        frequency: .any, reportDate: .any
-    ).willReturn([
-        ["Provider": "APPLE", "SKU": "com.example", "Units": "10"]
-    ])
-
-    let cmd = try SalesReportsDownload.parse([
-        "--vendor-number", "123", "--report-type", "SALES",
-        "--sub-type", "SUMMARY", "--frequency", "DAILY", "--pretty",
-    ])
-    let output = try await cmd.execute(repo: mockRepo)
-
-    #expect(output == """
-    {
-      "data" : [
-        {
-          "Provider" : "APPLE",
-          "SKU" : "com.example",
-          "Units" : "10"
-        }
-      ]
-    }
-    """)
-}
-```
-
-```bash
-swift test --filter 'ReportFilterTests|SDKReportRepository|SalesReportsDownloadTests|FinanceReportsDownloadTests'
-```
-
-## Analytics Reports
-
-Analytics reports use a multi-step workflow with structured JSON responses (unlike sales/finance which return TSV).
-
-### Resource Hierarchy
-
-```
-App → AnalyticsReportRequest → AnalyticsReport → AnalyticsReportInstance → AnalyticsReportSegment
-         (create/list/delete)    (by category)      (by granularity)          (download URL)
-```
-
-### Commands
-
-```bash
-# 1. Create an analytics report request
-asc analytics-reports request --app-id <id> --access-type ONE_TIME_SNAPSHOT|ONGOING
-
-# 2. List existing requests
-asc analytics-reports list --app-id <id> [--access-type ONGOING]
-
-# 3. Delete a request
-asc analytics-reports delete --request-id <id>
-
-# 4. List reports for a request (filtered by category)
-asc analytics-reports reports --request-id <id> [--category APP_USAGE|APP_STORE_ENGAGEMENT|COMMERCE|FRAMEWORK_USAGE|PERFORMANCE]
-
-# 5. List report instances (filtered by granularity)
-asc analytics-reports instances --report-id <id> [--granularity DAILY|WEEKLY|MONTHLY]
-
-# 6. Get download URLs for segments
-asc analytics-reports segments --instance-id <id>
-```
-
-### Analytics Domain Models
-
-**`AnalyticsReportRequest`** — id, appId, accessType, isStoppedDueToInactivity?
-- Affordances: `listReports`, `delete`, `listRequests`
-
-**`AnalyticsReport`** — id, requestId, name?, category?
-- Categories: `APP_USAGE`, `APP_STORE_ENGAGEMENT`, `COMMERCE`, `FRAMEWORK_USAGE`, `PERFORMANCE`
-- Affordances: `listInstances`, `listReports`
-
-**`AnalyticsReportInstance`** — id, reportId, granularity?, processingDate?
-- Granularity: `DAILY`, `WEEKLY`, `MONTHLY`
-- Affordances: `listSegments`, `listInstances`
-
-**`AnalyticsReportSegment`** — id, instanceId, checksum?, sizeInBytes?, url?
-- Affordances: `listSegments`
-
-### Typical Analytics Workflow
-
-```bash
-# 1. Request analytics for an app
+# 1. Request analytics for an app (or ONGOING)
 asc analytics-reports request --app-id 6450000000 --access-type ONE_TIME_SNAPSHOT --pretty
 
-# 2. List available reports (filter to commerce)
+# 2. List reports for the request, optionally by category
 asc analytics-reports reports --request-id req-abc --category COMMERCE --pretty
 
-# 3. Get daily instances
+# 3. List instances, optionally by granularity (DAILY, WEEKLY, MONTHLY)
 asc analytics-reports instances --report-id rpt-xyz --granularity DAILY --pretty
 
-# 4. Get download segments
+# 4. Get segments, which carry the URLs to download the raw data
 asc analytics-reports segments --instance-id inst-123 --pretty
-# → returns URLs to download the raw analytics data
+
+# Manage requests
+asc analytics-reports list --app-id 6450000000 --access-type ONGOING
+asc analytics-reports delete --request-id req-abc
 ```
 
-### Analytics API Reference
+Categories: `APP_USAGE`, `APP_STORE_ENGAGEMENT`, `COMMERCE`, `FRAMEWORK_USAGE`, `PERFORMANCE`. Each object's affordances point to the next step (`listReports`, `listInstances`, `listSegments`).
 
-| Endpoint | SDK Call | Repository Method |
-|----------|---------|-------------------|
-| `POST /v1/analyticsReportRequests` | `APIEndpoint.v1.analyticsReportRequests.post(body)` | `createRequest(...)` |
-| `GET /v1/apps/{id}/analyticsReportRequests` | `APIEndpoint.v1.apps.id(appId).analyticsReportRequests.get(...)` | `listRequests(...)` |
-| `DELETE /v1/analyticsReportRequests/{id}` | `APIEndpoint.v1.analyticsReportRequests.id(id).delete` | `deleteRequest(...)` |
-| `GET /v1/analyticsReportRequests/{id}/reports` | `APIEndpoint.v1.analyticsReportRequests.id(id).reports.get(...)` | `listReports(...)` |
-| `GET /v1/analyticsReports/{id}/instances` | `APIEndpoint.v1.analyticsReports.id(id).instances.get(...)` | `listInstances(...)` |
-| `GET /v1/analyticsReportInstances/{id}/segments` | `APIEndpoint.v1.analyticsReportInstances.id(id).segments.get()` | `listSegments(...)` |
+## REST
 
-## Extending
+Reports are CLI-only; `asc web-server` has no report routes yet.
 
-### Save to File
+## Gotchas
 
-Add `--save-to <path>` to write raw TSV to a file instead of parsing to JSON, useful for large reports or external processing.
+- `--vendor-number` is optional: it is auto-resolved from the active account (saved via `asc auth login --vendor-number` or `asc auth update --vendor-number`). An explicit value overrides it.
+- `--report-date` is optional only for `DAILY` (omit it to get the latest). `WEEKLY`, `MONTHLY` and `YEARLY` require it. Weekly dates must be a Sunday (e.g. `2024-01-07`); monthly dates look like `2024-01`.
+- `--version` sets the report schema version (e.g. `1_1` for `SALES/SUMMARY/DAILY`); omit it for Apple's default. An invalid value comes back as `PARAMETER_ERROR.INVALID` with the latest supported version.
+- Sales and finance reports are gzip-compressed TSV from Apple; asc decompresses and parses them, so columns differ per report type.
+- `customerSpend` and `proceeds` are kept per currency, because summing across currencies would be meaningless.
+- Apple amends daily reports for up to 5 days. `summary` reads the same `/v1/salesReports` data as `download`, so the most recent day may not match the App Store Connect mobile app's Trends view (which uses an internal endpoint).
+
+## See also
+
+[asc-auth](../asc-auth/README.md)

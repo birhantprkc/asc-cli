@@ -1,92 +1,41 @@
+---
+description: Manage the "Featured In-App Purchases" slots on an app's App Store product page. Use when promoting an IAP or subscription on the product page, or hiding/disabling a promoted slot.
+---
+
 # Promoted Purchases
 
-App Store product page promoted slots — the "Featured In-App Purchases" surfaced under an app's product page on the App Store. Each slot promotes either an in-app purchase or an auto-renewable subscription, and goes through App Review separately.
+The "Featured In-App Purchases" slots under an app's App Store product page. Each slot promotes either an in-app purchase or an auto-renewable subscription and goes through App Review separately. Every flag: [command reference](../../commands.md#asc-promoted-purchases).
 
-## CLI commands
-
-| Command | Required flags | Notes |
-|---------|----------------|-------|
-| `asc promoted-purchases list --app-id <id> [--limit <n>]` | `--app-id` | |
-| `asc promoted-purchases create --app-id <id> (--iap-id <id> | --subscription-id <id>) [--visible | --hidden] [--enabled | --disabled]` | `--app-id` plus exactly one of `--iap-id` / `--subscription-id` | Mutual-exclusion validated in the command. |
-| `asc promoted-purchases update --promoted-id <id> [--visible | --hidden] [--enabled | --disabled]` | `--promoted-id` | |
-| `asc promoted-purchases delete --promoted-id <id>` | `--promoted-id` | |
-
-`--visible` / `--hidden` flip `isVisibleForAllUsers`. `--enabled` / `--disabled` flip `isEnabled`. Omitting the pair leaves the field unchanged.
-
-## State semantics
-
-```swift
-public enum PromotedPurchaseState: String, Sendable, Codable, Equatable {
-    case approved, rejected, prepareForSubmission, waitingForReview, inReview, developerActionNeeded
-
-    public var isLocked: Bool   // true while WAITING_FOR_REVIEW or IN_REVIEW
-    public var isApproved: Bool // true only for .approved
-}
-```
-
-## State-aware affordances
-
-| State | `update` link | `delete` link |
-|-------|---------------|---------------|
-| `approved` / `rejected` / `prepareForSubmission` / `developerActionNeeded` | shown | shown |
-| `waitingForReview` / `inReview` | **suppressed** | **suppressed** |
-
-Submitting a mutation against a slot in review is a 409 conflict in ASC, so an agent following affordances can't make that mistake.
-
-## Domain model
-
-```swift
-public struct PromotedPurchase: Sendable, Equatable, Identifiable, Codable {
-    public let id: String
-    public let appId: String
-    public let isVisibleForAllUsers: Bool
-    public let isEnabled: Bool
-    public let state: PromotedPurchaseState?
-    public let inAppPurchaseId: String?    // mutually exclusive with subscriptionId
-    public let subscriptionId: String?
-}
-```
-
-`tableRow` formats the promotes target as `iap:<id>` or `sub:<id>`.
-
-## REST endpoints
-
-| Path | Method |
-|------|--------|
-| `/api/v1/apps/:appId/promoted-purchases` | GET |
-
-## API reference
-
-| Command | SDK call |
-|---------|----------|
-| `list` | `APIEndpoint.v1.apps.id(id).promotedPurchases.get()` |
-| `create` | `APIEndpoint.v1.promotedPurchases.post(PromotedPurchaseCreateRequest)` |
-| `update` | `APIEndpoint.v1.promotedPurchases.id(id).patch(PromotedPurchaseUpdateRequest)` |
-| `delete` | `APIEndpoint.v1.promotedPurchases.id(id).delete` |
-
-## File map
-
-```
-Sources/Domain/Apps/PromotedPurchases/
-├── PromotedPurchase.swift
-└── PromotedPurchaseRepository.swift
-
-Sources/Infrastructure/Apps/PromotedPurchases/
-└── SDKPromotedPurchaseRepository.swift
-
-Sources/ASCCommand/Commands/PromotedPurchases/
-├── PromotedPurchasesCommand.swift
-├── PromotedPurchasesList.swift
-├── PromotedPurchasesCreate.swift
-├── PromotedPurchasesUpdate.swift
-└── PromotedPurchasesDelete.swift
-
-Sources/ASCCommand/Commands/Web/Controllers/
-└── PromotedPurchasesController.swift
-```
-
-## Testing
-
+## Quick start
 ```bash
-swift test --filter 'PromotedPurchase'
+asc promoted-purchases list --app-id <APP_ID>
+asc promoted-purchases create --app-id <APP_ID> --iap-id <IAP_ID> --visible --enabled
 ```
+
+## Workflows
+
+### Promote a subscription, then hide it
+```bash
+asc promoted-purchases create --app-id <APP_ID> --subscription-id <SUB_ID> --visible --enabled
+asc promoted-purchases update --promoted-id <PROMOTED_ID> --hidden
+asc promoted-purchases delete --promoted-id <PROMOTED_ID>
+```
+
+`--visible` / `--hidden` set `isVisibleForAllUsers`; `--enabled` / `--disabled` set `isEnabled`. Omitting a pair leaves that field unchanged.
+
+In table output the promoted target shows as `iap:<id>` or `sub:<id>`.
+
+## REST
+| Method | Path | CLI equivalent |
+|---|---|---|
+| GET | `/api/v1/apps/:appId/promoted-purchases` | `asc promoted-purchases list --app-id` |
+
+Create, update and delete are CLI-only.
+
+## Gotchas
+- `create` needs exactly one of `--iap-id` / `--subscription-id`.
+- A slot's `state` is one of `APPROVED`, `REJECTED`, `PREPARE_FOR_SUBMISSION`, `WAITING_FOR_REVIEW`, `IN_REVIEW`, `DEVELOPER_ACTION_NEEDED`. `isLocked` is true while waiting for or in review; `isApproved` only for approved.
+- The `update` and `delete` affordances are hidden while a slot is `WAITING_FOR_REVIEW` or `IN_REVIEW`: App Store Connect answers a change to a slot in review with a 409 conflict.
+
+## See also
+[iap-subscriptions](../iap-subscriptions/README.md)

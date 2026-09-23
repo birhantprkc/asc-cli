@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 GLOBAL = {"output", "pretty", "timeout"}
-SKIP = {"help", "version"}
+SKIP = {"help"}  # the auto-generated help subcommand
 GUIDES = [
     ("release.md", "Release workflow"),
     ("library.md", "Use as a Swift package"),
@@ -43,12 +43,18 @@ def usage_part(arg):
     return f"[{part}]" if arg.get("isOptional") else part
 
 
+def is_builtin(arg):
+    """ArgumentParser's own --help / --version flags, and the global options."""
+    if arg["kind"] == "positional":
+        return False
+    name = arg["preferredName"]["name"]
+    if name == "help" or name in GLOBAL:
+        return True
+    return name == "version" and arg["kind"] == "flag" and arg.get("abstract") == "Show the version."
+
+
 def args_of(cmd):
-    return [
-        a for a in cmd.get("arguments", [])
-        if a.get("shouldDisplay", True)
-        and not (a["kind"] != "positional" and a["preferredName"]["name"] in SKIP | GLOBAL)
-    ]
+    return [a for a in cmd.get("arguments", []) if a.get("shouldDisplay", True) and not is_builtin(a)]
 
 
 def cell(text):

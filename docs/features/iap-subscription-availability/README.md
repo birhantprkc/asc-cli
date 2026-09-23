@@ -1,326 +1,108 @@
+---
+description: Set and inspect which territories an app, in-app purchase or subscription is sold in. Use when setting up availability for a new app or product, or finding out why a territory is blocked.
+---
+
 # App, IAP & Subscription Availability
 
-Manage territory availability for apps, in-app purchases, and auto-renewable subscriptions.
+Territory availability for apps, in-app purchases and auto-renewable subscriptions. Every flag: [app-availability](../../commands.md#asc-app-availability), [iap-availability](../../commands.md#asc-iap-availability), [subscription-availability](../../commands.md#asc-subscription-availability), [territories](../../commands.md#asc-territories).
 
-## CLI Usage
-
-### App Availability (Per-Territory Status)
-
-The richest availability view — shows every territory with `isAvailable`, blocking reasons (`contentStatuses`), `releaseDate`, and `isPreOrderEnabled`.
+## Quick start
 
 ```bash
-asc app-availability get --app-id <id> [--pretty]
-```
-
-Example output:
-```json
-{
-  "data": [{
-    "id": "avail-1",
-    "appId": "app-42",
-    "isAvailableInNewTerritories": true,
-    "territories": [
-      { "id": "ta-1", "territoryId": "USA", "isAvailable": true, "isPreOrderEnabled": false, "contentStatuses": ["AVAILABLE"] },
-      { "id": "ta-2", "territoryId": "CHN", "isAvailable": false, "isPreOrderEnabled": false, "contentStatuses": ["CANNOT_SELL_RESTRICTED_RATING"] }
-    ]
-  }]
-}
-```
-
-An app whose availability was never set up (App Store Connect shows **Set Up Availability**) returns `{"data":[]}`, and the CLI prints a hint with the `create` command on stderr.
-
-#### Set up app availability
-
-```bash
-asc app-availability create --app-id <id> --all-territories --available-in-new-territories
-asc app-availability create --app-id <id> --territory USA --territory JPN [--available-in-new-territories]
-```
-
-| Flag | Description |
-|------|-------------|
-| `--territory` | Territory to make the app available in; repeat for several |
-| `--all-territories` | Every territory from `asc territories list` (exactly one of these two) |
-| `--available-in-new-territories` | Also make it available in territories Apple adds later |
-
-One `POST /v2/appAvailabilities` with each territory as an inline `territoryAvailabilities` entry (`available: true`), then the availability is read back. Before release every territory reports `CANNOT_SELL` + `AVAILABLE_FOR_SALE_UNRELEASED_APP` — expected until the app is live.
-
-REST: `GET /api/v1/apps/{appId}/availability`, `POST /api/v1/apps/{appId}/availability` with body `{"territory": ["USA"]}` or `{"all-territories": true}`, plus optional `"available-in-new-territories": true`.
-
-**ContentStatus values** include: `AVAILABLE`, `MISSING_RATING`, `CANNOT_SELL_RESTRICTED_RATING`, `CANNOT_SELL_GAMBLING`, `BRAZIL_REQUIRED_TAX_ID`, `ICP_NUMBER_MISSING`, and 30+ more reasons explaining why a territory is blocked.
-
-### Discover Territories
-
-```bash
-# List all ~175 territories with currency codes
-asc territories list
 asc territories list --output table
+asc app-availability create --app-id <id> --all-territories --available-in-new-territories
+asc iap-availability create --iap-id <id> --available-in-new-territories --territory USA --territory JPN
+asc subscription-availability create --subscription-id <id> --territory USA --territory GBR
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--output` | No | Output format: json (default), table, markdown |
-| `--pretty` | No | Pretty-print JSON output |
+## Workflows
 
-Example output (table):
-
-```
-ID    Currency
-USA   USD
-CHN   CNY
-JPN   JPY
-GBR   GBP
-DEU   EUR
-...
-```
-
-### IAP Availability
-
-#### Get IAP Availability
+### Set up and check app availability
 
 ```bash
-asc iap-availability get --iap-id <id>
+# Everywhere, including territories Apple adds later
+asc app-availability create --app-id <id> --all-territories --available-in-new-territories
+
+# Or only a few territories
+asc app-availability create --app-id <id> --territory USA --territory JPN
+
+# Per-territory status
+asc app-availability get --app-id <id> --pretty
 ```
 
-Returns territory IDs **with currency codes** so you know which territories the IAP is available in.
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--iap-id` | Yes | IAP ID to get availability for |
-
-#### Create IAP Availability
-
-```bash
-asc iap-availability create --iap-id <id> \
-  --available-in-new-territories \
-  --territory USA --territory CHN --territory JPN
-```
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--iap-id` | Yes | IAP ID to set availability for |
-| `--available-in-new-territories` | No | Auto-include new territories Apple adds |
-| `--territory` | No | Territory ID (repeatable, e.g. USA, CHN, JPN) |
-
-### Subscription Availability
-
-#### Get Subscription Availability
-
-```bash
-asc subscription-availability get --subscription-id <id>
-```
-
-#### Create Subscription Availability
-
-```bash
-asc subscription-availability create --subscription-id <id> \
-  --available-in-new-territories \
-  --territory USA --territory GBR
-```
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--subscription-id` | Yes | Subscription ID to set availability for |
-| `--available-in-new-territories` | No | Auto-include new territories Apple adds |
-| `--territory` | No | Territory ID (repeatable) |
-
-### Example Output (JSON)
+`app-availability get` is the richest view: every territory with `isAvailable`, blocking reasons (`contentStatuses`), `releaseDate` and `isPreOrderEnabled`.
 
 ```json
 {
-  "data": [
-    {
-      "id": "avail-1",
-      "iapId": "iap-42",
-      "isAvailableInNewTerritories": true,
-      "territories": [
-        { "id": "USA", "currency": "USD" },
-        { "id": "CHN", "currency": "CNY" }
-      ],
-      "affordances": {
-        "getAvailability": "asc iap-availability get --iap-id iap-42",
-        "createAvailability": "asc iap-availability create --iap-id iap-42 ...",
-        "listTerritories": "asc territories list"
-      }
-    }
+  "id": "avail-1",
+  "appId": "app-42",
+  "isAvailableInNewTerritories": true,
+  "territories": [
+    { "id": "ta-1", "territoryId": "USA", "isAvailable": true, "isPreOrderEnabled": false, "contentStatuses": ["AVAILABLE"] },
+    { "id": "ta-2", "territoryId": "CHN", "isAvailable": false, "isPreOrderEnabled": false, "contentStatuses": ["CANNOT_SELL_RESTRICTED_RATING"] }
   ]
 }
 ```
 
-## Typical Workflow
+`contentStatuses` explains why a territory is blocked: `AVAILABLE`, `MISSING_RATING`, `CANNOT_SELL_RESTRICTED_RATING`, `CANNOT_SELL_GAMBLING`, `BRAZIL_REQUIRED_TAX_ID`, `ICP_NUMBER_MISSING`, and 30+ more.
+
+### Set IAP and subscription availability
 
 ```bash
-# 1. Discover what territories exist
-asc territories list --output table
-
-# 2. List IAPs for an app
 asc iap list --app-id $APP_ID
-
-# 3. Check current availability for a specific IAP
-asc iap-availability get --iap-id $IAP_ID
-# → Shows which territories + currency codes are enabled
-
-# 4. Set availability to specific territories
+asc iap-availability get --iap-id $IAP_ID          # territories + currency codes
 asc iap-availability create --iap-id $IAP_ID \
   --available-in-new-territories \
   --territory USA --territory GBR --territory DEU
 
-# Same flow for subscriptions:
 asc subscriptions list --group-id $GROUP_ID
 asc subscription-availability get --subscription-id $SUB_ID
 asc subscription-availability create --subscription-id $SUB_ID \
   --territory USA --territory JPN
 ```
 
-## Architecture
+IAP and subscription availability lists territory IDs with currency codes:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ ASCCommand                                                   │
-│  TerritoriesCommand (list)                                  │
-│  IAPAvailabilityCommand (get, create)                       │
-│  SubscriptionAvailabilityCommand (get, create)              │
-├─────────────────────────────────────────────────────────────┤
-│ Infrastructure                                               │
-│  SDKTerritoryRepository                                     │
-│  SDKInAppPurchaseAvailabilityRepository                     │
-│  SDKSubscriptionAvailabilityRepository                      │
-├─────────────────────────────────────────────────────────────┤
-│ Domain                                                       │
-│  Territory (id, currency)                                   │
-│  InAppPurchaseAvailability + territories: [Territory]        │
-│  SubscriptionAvailability + territories: [Territory]         │
-│  TerritoryRepository (@Mockable)                            │
-│  InAppPurchaseAvailabilityRepository (@Mockable)            │
-│  SubscriptionAvailabilityRepository (@Mockable)             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Domain Models
-
-### Territory
-
-```swift
-public struct Territory: Sendable, Equatable, Identifiable, Codable {
-    public let id: String        // e.g. "USA", "CHN", "JPN"
-    public let currency: String? // e.g. "USD", "CNY", "JPY"
+```json
+{
+  "id": "avail-1",
+  "iapId": "iap-42",
+  "isAvailableInNewTerritories": true,
+  "territories": [ { "id": "USA", "currency": "USD" }, { "id": "CHN", "currency": "CNY" } ],
+  "affordances": {
+    "getAvailability": "asc iap-availability get --iap-id iap-42",
+    "createAvailability": "asc iap-availability create --iap-id iap-42 ...",
+    "listTerritories": "asc territories list"
+  }
 }
 ```
 
-### InAppPurchaseAvailability
+IAPs and subscriptions also carry a `getAvailability` affordance.
 
-```swift
-public struct InAppPurchaseAvailability: Sendable, Equatable, Identifiable, Codable {
-    public let id: String
-    public let iapId: String                        // parent ID, injected by Infrastructure
-    public let isAvailableInNewTerritories: Bool
-    public let territories: [Territory]             // includes currency from API `included` data
-}
-```
+## REST
 
-**Affordances:** `getAvailability`, `createAvailability`, `listTerritories`
+| Method | Path | CLI equivalent |
+|---|---|---|
+| GET | `/api/v1/apps/{appId}/availability` | `app-availability get` |
+| POST | `/api/v1/apps/{appId}/availability` | `app-availability create` |
+| GET | `/api/v1/iap/{iapId}/availability` | `iap-availability get` |
+| PATCH | `/api/v1/iap/{iapId}/availability` | `iap-availability create` |
+| GET | `/api/v1/subscriptions/{subscriptionId}/availability` | `subscription-availability get` |
 
-### SubscriptionAvailability
+Bodies:
+- App: `{"territory": ["USA"]}` or `{"all-territories": true}`, plus optional `"available-in-new-territories": true`.
+- IAP: `{ "territoryIds": [...], "availableInNewTerritories": Bool }` — an upsert that replaces existing availability.
 
-```swift
-public struct SubscriptionAvailability: Sendable, Equatable, Identifiable, Codable {
-    public let id: String
-    public let subscriptionId: String               // parent ID, injected by Infrastructure
-    public let isAvailableInNewTerritories: Bool
-    public let territories: [Territory]
-}
-```
+The IAP and subscription `GET` return a synthetic all-territory record when no availability has been configured yet.
 
-**Affordances:** Same pattern as IAP availability.
+## Gotchas
 
-## File Map
+- An app whose availability was never set up (App Store Connect shows **Set Up Availability**) returns `{"data":[]}` from `app-availability get`, and the CLI prints the `create` command as a hint on stderr.
+- `app-availability create` takes exactly one of `--territory` (repeatable) or `--all-territories`.
+- Before release, every territory reports `CANNOT_SELL` + `AVAILABLE_FOR_SALE_UNRELEASED_APP`. That is expected until the app is live.
+- `--all-territories` uses the same list as `asc territories list` (~175 territories).
 
-```
-Sources/
-├── Domain/Territories/
-│   ├── Territory.swift
-│   └── TerritoryRepository.swift
-├── Domain/Apps/InAppPurchases/Availability/
-│   ├── InAppPurchaseAvailability.swift
-│   └── InAppPurchaseAvailabilityRepository.swift
-├── Domain/Apps/Subscriptions/Availability/
-│   ├── SubscriptionAvailability.swift
-│   └── SubscriptionAvailabilityRepository.swift
-├── Infrastructure/Territories/
-│   └── SDKTerritoryRepository.swift
-├── Infrastructure/Apps/InAppPurchases/Availability/
-│   └── SDKInAppPurchaseAvailabilityRepository.swift
-├── Infrastructure/Apps/Subscriptions/Availability/
-│   └── SDKSubscriptionAvailabilityRepository.swift
-└── ASCCommand/Commands/
-    ├── Territories/
-    │   ├── TerritoriesCommand.swift
-    │   └── TerritoriesList.swift
-    ├── IAP/Availability/
-    │   ├── IAPAvailabilityCommand.swift
-    │   ├── IAPAvailabilityGet.swift
-    │   └── IAPAvailabilityCreate.swift
-    └── Subscriptions/Availability/
-        ├── SubscriptionAvailabilityCommand.swift
-        ├── SubscriptionAvailabilityGet.swift
-        └── SubscriptionAvailabilityCreate.swift
+## See also
 
-Tests/
-├── DomainTests/Territories/
-│   └── TerritoryTests.swift
-├── DomainTests/Apps/InAppPurchases/Availability/
-│   └── InAppPurchaseAvailabilityTests.swift
-├── DomainTests/Apps/Subscriptions/Availability/
-│   └── SubscriptionAvailabilityTests.swift
-├── InfrastructureTests/Territories/
-│   └── SDKTerritoryRepositoryTests.swift
-├── InfrastructureTests/Apps/InAppPurchases/Availability/
-│   └── SDKInAppPurchaseAvailabilityRepositoryTests.swift
-├── InfrastructureTests/Apps/Subscriptions/Availability/
-│   └── SDKSubscriptionAvailabilityRepositoryTests.swift
-└── ASCCommandTests/Commands/
-    ├── Territories/
-    │   └── TerritoriesListTests.swift
-    ├── IAP/Availability/
-    │   ├── IAPAvailabilityGetTests.swift
-    │   └── IAPAvailabilityCreateTests.swift
-    └── Subscriptions/Availability/
-        ├── SubscriptionAvailabilityGetTests.swift
-        └── SubscriptionAvailabilityCreateTests.swift
-```
-
-| Wiring File | Change |
-|-------------|--------|
-| `ClientFactory.swift` | `makeTerritoryRepository`, `makeInAppPurchaseAvailabilityRepository`, `makeSubscriptionAvailabilityRepository` |
-| `ClientProvider.swift` | Static factory methods for all three repositories |
-| `ASC.swift` | Register `TerritoriesCommand`, `IAPAvailabilityCommand`, `SubscriptionAvailabilityCommand` |
-| `InAppPurchase.swift` | Added `getAvailability` affordance |
-| `Subscription.swift` | Added `getAvailability` affordance |
-
-## API Reference
-
-| Endpoint | SDK Call | Repository Method |
-|----------|---------|-------------------|
-| GET /v1/territories | `APIEndpoint.v1.territories.get()` | `listTerritories()` |
-| GET /v2/inAppPurchases/{id}/inAppPurchaseAvailability | `APIEndpoint.v2.inAppPurchases.id().inAppPurchaseAvailability.get()` | `getAvailability(iapId:)` |
-| POST /v1/inAppPurchaseAvailabilities | `APIEndpoint.v1.inAppPurchaseAvailabilities.post()` | `createAvailability(iapId:...)` |
-| GET /v1/subscriptions/{id}/subscriptionAvailability | `APIEndpoint.v1.subscriptions.id().subscriptionAvailability.get()` | `getAvailability(subscriptionId:)` |
-| POST /v1/subscriptionAvailabilities | `APIEndpoint.v1.subscriptionAvailabilities.post()` | `createAvailability(subscriptionId:...)` |
-
-### REST Endpoints
-
-| Method | Path | Body | Notes |
-|--------|------|------|-------|
-| GET | `/api/v1/iap/{iapId}/availability` | — | Returns synthetic full-territory record when no availability is configured yet |
-| PATCH | `/api/v1/iap/{iapId}/availability` | `{ "territoryIds": [...], "availableInNewTerritories": Bool }` | Upsert via ASC `POST /v1/inAppPurchaseAvailabilities` (replaces if already set) |
-| GET | `/api/v1/subscriptions/{subscriptionId}/availability` | — | Same synthetic-default behavior |
-
-## Testing
-
-```bash
-swift test --filter 'TerritoryTests|InAppPurchaseAvailabilityTests|SubscriptionAvailabilityTests|SDKTerritoryRepositoryTests|SDKInAppPurchaseAvailabilityRepositoryTests|SDKSubscriptionAvailabilityRepositoryTests|IAPAvailabilityGetTests|IAPAvailabilityCreateTests|SubscriptionAvailabilityGetTests|SubscriptionAvailabilityCreateTests|TerritoriesListTests'
-```
-
-## Extending
-
-- **App-level availability** — Use `/v2/appAvailabilities` for app-level territory control
-- **Territory filtering** — Add `--currency USD` filter to `asc territories list`
+- [App pricing](../app-pricing/README.md)
+- [IAP & subscriptions](../iap-subscriptions/README.md)

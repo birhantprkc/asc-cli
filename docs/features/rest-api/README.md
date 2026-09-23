@@ -1,52 +1,24 @@
-# Unified Affordances & REST API
+---
+description: Drive asc over HTTP with asc web-server, a HATEOAS REST API whose _links mirror the CLI affordances. Use when an agent, script or web app needs App Store Connect data over REST instead of the CLI.
+---
 
-## Overview
+# REST API
 
-The `asc` CLI supports two interaction modes sharing a single Domain layer:
+`asc web-server` exposes the same features as the CLI over HTTP. CLI responses carry `affordances` (ready-to-run commands); REST responses carry `_links` (href + HTTP method). Both come from the same definition on each model, so they always match. Every flag: [command reference](../../commands.md#asc-web-server).
 
-1. **CLI mode** — `asc apps list` → JSON with `"affordances"` (CLI commands)
-2. **REST API mode** — `GET /api/v1/apps` → JSON with `"_links"` (HATEOAS links)
-
-Both modes derive from a **single source of truth**: the `Affordance` struct defined on each domain model.
-
-## CLI Usage
-
-### Starting the server
+## Quick start
 
 ```bash
-asc web-server --port 8420
-```
-
-### REST API endpoints
-
-```bash
-# HATEOAS entry point — discover all available resources
-curl http://localhost:8420/api/v1
-
-# App management
+asc web-server                       # port 8420 by default; --port to change
+curl http://localhost:8420/api/v1    # discover every top-level resource
 curl http://localhost:8420/api/v1/apps
-curl http://localhost:8420/api/v1/apps/123
-curl http://localhost:8420/api/v1/apps/123/versions
-curl http://localhost:8420/api/v1/apps/123/builds
-curl http://localhost:8420/api/v1/apps/123/testflight
-
-# Code signing
-curl http://localhost:8420/api/v1/certificates
-curl http://localhost:8420/api/v1/bundle-ids
-curl http://localhost:8420/api/v1/devices
-curl http://localhost:8420/api/v1/profiles
-
-# Local resources
-curl http://localhost:8420/api/v1/simulators
-curl http://localhost:8420/api/v1/plugins
-
-# Reference data
-curl http://localhost:8420/api/v1/territories
 ```
 
-### API Root (entry point)
+## Workflows
 
-`GET /api/v1` returns an index of all top-level resources:
+### Discover and navigate
+
+Start at `GET /api/v1`. It lists every top-level resource:
 
 ```json
 {
@@ -70,244 +42,63 @@ curl http://localhost:8420/api/v1/territories
 }
 ```
 
-An agent starts here, follows `_links` to navigate resources, and each resource response includes further `_links` for deeper navigation.
-
-### Resource response format
-
-REST responses use `_links` instead of CLI `affordances`:
+Follow `_links` from there. Each resource carries links for the next step:
 
 ```json
 {
-  "data": [
-    {
-      "id": "123",
-      "name": "My App",
-      "bundleId": "com.example.app",
-      "_links": {
-        "listVersions": { "href": "/api/v1/apps/123/versions", "method": "GET" },
-        "listAppInfos": { "href": "/api/v1/apps/123/app-infos", "method": "GET" },
-        "listReviews":  { "href": "/api/v1/apps/123/reviews", "method": "GET" }
-      }
-    }
-  ]
+  "id": "123",
+  "name": "My App",
+  "bundleId": "com.example.app",
+  "_links": {
+    "listVersions": { "href": "/api/v1/apps/123/versions", "method": "GET" },
+    "listAppInfos": { "href": "/api/v1/apps/123/app-infos", "method": "GET" },
+    "listReviews":  { "href": "/api/v1/apps/123/reviews", "method": "GET" }
+  }
 }
 ```
 
-The legacy `POST /api/run` CLI bridge remains available for commands without REST equivalents.
+The same app from `asc apps list` has `"affordances": { "listVersions": "asc versions list --app-id 123", … }`.
 
-## Architecture
-
-```
-Terminal                          Web App / Agent
-   │                                    │
-   │ CLI args                    HTTP request
-   ▼                                    ▼
-ASCCommand                       RESTRoutes
-(ArgumentParser)                 (Hummingbird)
-   │                                    │
-   │ execute(repo:)              RESTHandlers.*()
-   ▼                                    ▼
-OutputFormatter(.cli)            OutputFormatter(.rest)
-   │                                    │
-   │ WithAffordances(.cli)       WithAffordances(.rest)
-   ▼                                    ▼
-"affordances": {                 "_links": {
-  "key": "asc cmd ..."            "key": {"href":"...", "method":"..."}
-}                                }
-```
-
-Both call the same Domain repositories. CLI creates repos via `ClientProvider`. REST controllers receive injected repos at startup (no per-request construction). Domain models conform to `Presentable` — both ports format output without duplicating headers/rowMapper.
-
-## Domain Models
-
-### Affordance (single source of truth)
-
-**File**: `Sources/Domain/Shared/Affordance.swift`
-
-```swift
-public struct Affordance: Sendable, Equatable {
-    public let key: String              // "listVersions"
-    public let command: String          // "versions"
-    public let action: String           // "list"
-    public let params: [String: String] // ["app-id": "123"]
-
-    public var cliCommand: String       // "asc versions list --app-id 123"
-    public var restLink: APILink        // {href: "/api/v1/apps/123/versions", method: "GET"}
-}
-```
-
-### APILink
-
-```swift
-public struct APILink: Sendable, Equatable, Codable {
-    public let href: String
-    public let method: String
-}
-```
-
-### AffordanceMode
-
-```swift
-public enum AffordanceMode: Sendable, Equatable {
-    case cli   // Renders "affordances": {key: "asc ..."}
-    case rest  // Renders "_links": {key: {href, method}}
-}
-```
-
-### AffordanceProviding protocol
-
-**File**: `Sources/Domain/Shared/AffordanceProviding.swift`
-
-```swift
-public protocol AffordanceProviding {
-    var structuredAffordances: [Affordance] { get }  // Single source
-    var affordances: [String: String] { get }         // Derived: CLI
-    var apiLinks: [String: APILink] { get }           // Derived: REST
-    var registryProperties: [String: String] { get }
-}
-```
-
-Default implementations derive `affordances` and `apiLinks` from `structuredAffordances`. Models that haven't migrated can still override `affordances` directly.
-
-### RESTPathResolver
-
-**File**: `Sources/Domain/Shared/Affordance.swift`
-
-Maps CLI commands to REST paths using a static route table:
-
-| CLI command | Parent param | REST path |
-|-------------|-------------|-----------|
-| `versions` | `app-id` | `/api/v1/apps/{id}/versions` |
-| `builds` | `app-id` | `/api/v1/apps/{id}/builds` |
-| `reviews` | `app-id` | `/api/v1/apps/{id}/reviews` |
-| `version-localizations` | `version-id` | `/api/v1/versions/{id}/localizations` |
-| `screenshot-sets` | `localization-id` | `/api/v1/version-localizations/{id}/screenshot-sets` |
-
-### HTTP Method Mapping
-
-| Action | HTTP Method |
-|--------|------------|
-| `list`, `get` | `GET` |
-| `create` | `POST` |
-| `update` | `PATCH` |
-| `delete` | `DELETE` |
-| custom (e.g. `submit`) | `POST` |
-
-## Migrated Models
-
-Models using `structuredAffordances` (single source):
-- `App` — `listVersions`, `listAppInfos`, `listReviews`
-- `AppStoreVersion` — `listLocalizations`, `listVersions`, `checkReadiness`, `getReviewDetail`, `submitForReview` (state-aware)
-
-All other models (~78) still use the legacy `affordances` override and can be migrated incrementally.
-
-## File Map
-
-### Sources
-
-```
-Sources/
-├── Domain/
-│   └── Shared/
-│       ├── Affordance.swift              # Affordance, APILink, AffordanceMode, RESTPathResolver
-│       ├── AffordanceProviding.swift     # Protocol with structuredAffordances + derived properties
-│       └── APIRoot.swift                 # HATEOAS entry point model
-├── ASCCommand/
-│   ├── OutputFormatter.swift             # WithAffordances(mode:), formatAgentItems(affordanceMode:)
-│   └── Commands/Web/
-│       ├── WebCommand.swift              # Wires RESTRoutes.configure into ASCWebServer
-│       ├── RESTHandlers.swift            # Handler logic: repo → OutputFormatter(.rest) → JSON
-│       ├── RESTRoutes.swift              # Composes all route files into one configurator
-│       └── Routes/
-│           ├── RootRoutes.swift          # GET /api/v1 — HATEOAS entry point
-│           ├── AppsRoutes.swift          # /apps, /apps/:id, /apps/:id/versions, builds, testflight
-│           ├── CodeSigningRoutes.swift   # /certificates, /bundle-ids, /devices, /profiles
-│           ├── SimulatorsRoutes.swift    # /simulators
-│           ├── PluginsRoutes.swift       # /plugins
-│           └── TerritoriesRoutes.swift   # /territories
-└── Infrastructure/
-    └── Web/
-        └── ASCWebServer.swift            # Accepts restRouteConfigurator closure
-```
-
-### Tests
-
-```
-Tests/
-├── DomainTests/
-│   └── Shared/
-│       └── AffordanceTests.swift         # 42 tests: CLI/REST rendering, route table, APIRoot, model migration
-└── ASCCommandTests/
-    ├── OutputFormatterTests.swift         # 11 tests: CLI + REST mode formatting
-    └── Commands/Web/
-        └── RESTRoutesTests.swift         # 8 tests: REST handlers + API root
-```
-
-## Testing
+### Common requests
 
 ```bash
-# All tests
-swift test
-
-# Affordance tests only
-swift test --filter 'AffordanceTests'
-
-# REST route handler tests
-swift test --filter 'RESTRoutesTests'
-
-# OutputFormatter tests (includes REST mode)
-swift test --filter 'OutputFormatterTests'
+curl http://localhost:8420/api/v1/apps/123
+curl http://localhost:8420/api/v1/apps/123/versions
+curl http://localhost:8420/api/v1/apps/123/builds
+curl http://localhost:8420/api/v1/apps/123/testflight
+curl http://localhost:8420/api/v1/certificates
+curl http://localhost:8420/api/v1/bundle-ids
+curl http://localhost:8420/api/v1/devices
+curl http://localhost:8420/api/v1/profiles
+curl http://localhost:8420/api/v1/simulators
+curl http://localhost:8420/api/v1/plugins
+curl http://localhost:8420/api/v1/territories
 ```
 
-## Extending
+Each feature doc lists its own routes in its **REST** section.
 
-### Adding a new REST endpoint
+## How affordances map to HTTP
 
-1. Add handler in `RESTHandlers.swift`:
-```swift
-static func listBuilds(appId: String, repo: any BuildRepository) async throws -> String {
-    let builds = try await repo.listBuilds(appId: appId, ...)
-    let formatter = OutputFormatter(format: .json, pretty: true)
-    return try formatter.formatAgentItems(builds, headers: [], rowMapper: { _ in [] }, affordanceMode: .rest)
-}
-```
+An affordance `asc <command> <action> --<parent>-id X` becomes a link:
 
-2. Register route in `RESTRoutes.swift`:
-```swift
-group.get("/apps/:appId/builds") { request, context -> Response in
-    let appId = context.parameters.get("appId")!
-    let repo = try ClientProvider.makeBuildRepository()
-    let output = try await RESTHandlers.listBuilds(appId: appId, repo: repo)
-    return jsonUTF8Response(output)
-}
-```
+| CLI action | HTTP | Path shape |
+|---|---|---|
+| `list` | GET | collection, e.g. `/api/v1/apps/{id}/versions` |
+| `get` | GET | `/api/v1/<resource>/{id}` |
+| `create`, `add` | POST | collection |
+| `update` | PATCH | `/api/v1/<resource>/{id}` |
+| `delete`, `remove` | DELETE | `/api/v1/<resource>/{id}` |
+| anything else (e.g. `submit`, `start`) | POST | `/api/v1/<resource>/{id}/{action}` |
 
-### Migrating a model to structured affordances
+Query parameters use the CLI flag names: `--state` → `?state=`, `--expired-only` → `?expired-only=true`.
 
-Replace the `affordances` override with `structuredAffordances`:
+## Gotchas
 
-```swift
-// Before
-extension MyModel: AffordanceProviding {
-    public var affordances: [String: String] {
-        ["listChildren": "asc children list --parent-id \(id)"]
-    }
-}
+- A resource's `_links` are state-aware, exactly like CLI affordances: an action that isn't allowed in the current state has no link.
+- `POST /api/run` is a legacy bridge that runs a CLI command for features without a REST route yet.
+- Uses the same credentials as the CLI (`asc auth login` or environment variables).
 
-// After
-extension MyModel: AffordanceProviding {
-    public var structuredAffordances: [Affordance] {
-        [Affordance(key: "listChildren", command: "children", action: "list", params: ["parent-id": id])]
-    }
-}
-```
+## See also
 
-Both `affordances` (CLI) and `apiLinks` (REST) are derived automatically.
-
-### Adding to the route table
-
-Add entry in `RESTPathResolver.routeTable`:
-
-```swift
-"children": (parentParam: "parent-id", parentSegment: "parents", segment: "children"),
-```
+- [Web Apps](../web-apps/README.md) — browser UIs that talk to this server
+- [Web server architecture](../web-server-architecture/README.md)

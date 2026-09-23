@@ -1,40 +1,41 @@
-# asc init — Project Context Initialisation
-
-Saves the current project's app ID, name, and bundle ID to `.asc/project.json` in the working directory. Agents and automation scripts can read this file to discover the app context without calling `asc apps list` on every session.
-
+---
+description: Save the current project's app ID, name, bundle ID and review contact to .asc/project.json. Use when setting up a repo so agents and scripts know which app to work on without listing apps every session.
 ---
 
-## CLI Usage
+# asc init — Project Context
 
-### `asc init`
+Saves the app ID, name and bundle ID (plus optional App Review contact) to `.asc/project.json` in the working directory, so agents and scripts can find the app without calling `asc apps list` every session. Every flag: [command reference](../../commands.md#asc-init).
 
-Initialise project context. Priority: `--app-id` > `--name` > auto-detect from `.xcodeproj`.
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--app-id` | One of three | App Store Connect app ID (direct, no API list call) |
-| `--name` | One of three | App name to search for (case-insensitive) |
-| _(none)_ | One of three | Auto-detect from `PRODUCT_BUNDLE_IDENTIFIER` in `.xcodeproj/project.pbxproj` |
-| `--contact-first-name` | No | Review contact first name |
-| `--contact-last-name` | No | Review contact last name |
-| `--contact-phone` | No | Review contact phone number |
-| `--contact-email` | No | Review contact email address |
-| `--output` | No | Output format: `json` (default), `table`, `markdown` |
-| `--pretty` | No | Pretty-print JSON output |
-
-**Examples:**
+## Quick start
 
 ```bash
-# Direct — no API list call needed
-asc init --app-id 1234567890 --pretty
+cd /path/to/MyApp
+asc init --pretty                          # auto-detect from *.xcodeproj
+asc init --name "My App" --pretty          # or search by name
+asc init --app-id 1234567890 --pretty      # or give the ID directly
+```
 
-# By name — fetches all apps and matches case-insensitively
-asc init --name "My App" --pretty
+## Workflows
 
-# Auto-detect — scans *.xcodeproj in the current directory
+### Set up once, reuse every session
+
+```bash
+# First-time setup (run once per project)
 asc init --pretty
+# → saves .asc/project.json
 
-# With review contact info
+# Later sessions — read context without listing all apps
+APP_ID=$(jq -r '.appId' .asc/project.json)
+asc versions list  --app-id "$APP_ID"
+asc builds list    --app-id "$APP_ID"
+asc app-infos list --app-id "$APP_ID"
+```
+
+An agent can read `.asc/project.json` at the start of every session and skip app discovery entirely.
+
+### Save the App Review contact
+
+```bash
 asc init --app-id 1234567890 \
   --contact-first-name Jane \
   --contact-last-name Smith \
@@ -43,65 +44,7 @@ asc init --app-id 1234567890 \
   --pretty
 ```
 
-**Output (JSON, without contact):**
-
-```json
-{
-  "data": [
-    {
-      "affordances": {
-        "checkReadiness": "asc versions check-readiness --version-id <id>",
-        "listAppInfos":   "asc app-infos list --app-id 1234567890",
-        "listBuilds":     "asc builds list --app-id 1234567890",
-        "listVersions":   "asc versions list --app-id 1234567890",
-        "setReviewContact": "asc init --app-id 1234567890 --contact-email ... --contact-phone ..."
-      },
-      "appId":    "1234567890",
-      "appName":  "My App",
-      "bundleId": "com.example.myapp"
-    }
-  ]
-}
-```
-
-**Output (JSON, with contact):**
-
-```json
-{
-  "data": [
-    {
-      "affordances": {
-        "checkReadiness": "asc versions check-readiness --version-id <id>",
-        "listAppInfos":   "asc app-infos list --app-id 1234567890",
-        "listBuilds":     "asc builds list --app-id 1234567890",
-        "listVersions":   "asc versions list --app-id 1234567890",
-        "updateReviewContact": "asc init --app-id 1234567890 --contact-email ... --contact-phone ..."
-      },
-      "appId":    "1234567890",
-      "appName":  "My App",
-      "bundleId": "com.example.myapp",
-      "contactEmail": "jane@example.com",
-      "contactFirstName": "Jane",
-      "contactLastName": "Smith",
-      "contactPhone": "+1-555-0100"
-    }
-  ]
-}
-```
-
-**Table output:**
-
-```
-App ID      Name    Bundle ID
-----------  ------  -----------------
-1234567890  My App  com.example.myapp
-```
-
----
-
-## Saved File
-
-`./.asc/project.json` (relative to cwd). Contact fields are omitted when not set:
+The saved file (contact fields are omitted when not set):
 
 ```json
 {
@@ -115,193 +58,35 @@ App ID      Name    Bundle ID
 }
 ```
 
----
+### Output and affordances
 
-## Typical Workflow
-
-```bash
-# First-time setup (run once per project)
-cd /path/to/MyApp
-asc init --pretty
-# → saves .asc/project.json
-
-# In subsequent sessions — read context without listing all apps
-APP_ID=$(jq -r '.appId' .asc/project.json)
-asc versions list --app-id "$APP_ID"
-asc builds list   --app-id "$APP_ID"
-asc app-infos list --app-id "$APP_ID"
-```
-
-An agent can read `.asc/project.json` at the start of every session and skip the `asc apps list` discovery step entirely.
-
----
-
-## Architecture
-
-```
-ASCCommand/Commands/Init/
-└── InitCommand.swift          [asc init — 3 detection modes + XcodeProjectScanner]
-         ↓
-Infrastructure/Projects/
-└── FileProjectConfigStorage.swift  [saves/loads .asc/project.json via JSONEncoder]
-         ↓
-Domain/Projects/
-├── ProjectConfig.swift        [struct: appId, appName, bundleId, contact fields + AffordanceProviding]
-└── ProjectConfigStorage.swift [@Mockable protocol: save/load/delete]
-```
-
-**Dependency note:** `InitCommand` depends on `AppRepository` (Domain) for app lookup and `ProjectConfigStorage` (Domain) for persistence. No new Infrastructure repository is needed — `FileProjectConfigStorage` is a plain struct with no SDK dependency.
-
----
-
-## Domain Models
-
-### `ProjectConfig`
-
-```swift
-public struct ProjectConfig: Sendable, Equatable, AffordanceProviding {
-    public let appId: String
-    public let appName: String
-    public let bundleId: String
-    public let contactFirstName: String?
-    public let contactLastName: String?
-    public let contactPhone: String?
-    public let contactEmail: String?
-
-    public var hasReviewContact: Bool  // true when both email and phone are set
+```json
+{
+  "affordances": {
+    "checkReadiness": "asc versions check-readiness --version-id <id>",
+    "listAppInfos":   "asc app-infos list --app-id 1234567890",
+    "listBuilds":     "asc builds list --app-id 1234567890",
+    "listVersions":   "asc versions list --app-id 1234567890",
+    "setReviewContact": "asc init --app-id 1234567890 --contact-email ... --contact-phone ..."
+  },
+  "appId":    "1234567890",
+  "appName":  "My App",
+  "bundleId": "com.example.myapp"
 }
 ```
 
-**Affordances:**
+`setReviewContact` appears until both contact email and phone are saved; after that it becomes `updateReviewContact`.
 
-| Key | Command | Condition |
-|-----|---------|-----------|
-| `listVersions` | `asc versions list --app-id <appId>` | Always |
-| `listBuilds` | `asc builds list --app-id <appId>` | Always |
-| `listAppInfos` | `asc app-infos list --app-id <appId>` | Always |
-| `checkReadiness` | `asc versions check-readiness --version-id <id>` | Always |
-| `setReviewContact` | `asc init --app-id <appId> --contact-email ... --contact-phone ...` | When `hasReviewContact == false` |
-| `updateReviewContact` | `asc init --app-id <appId> --contact-email ... --contact-phone ...` | When `hasReviewContact == true` |
+## Gotchas
 
-Custom `Codable`: contact fields use `encodeIfPresent` / `decodeIfPresent` to omit nil values from JSON. Backward-compatible with existing `project.json` files that lack contact fields.
+- Lookup priority: `--app-id` > `--name` > auto-detect.
+- `--name` matches case-insensitively; it and auto-detect both list all your apps first. `--app-id` fetches just that app.
+- Auto-detect reads literal `PRODUCT_BUNDLE_IDENTIFIER` values from `*.xcodeproj/project.pbxproj` in the current directory; values that are `$`-variable references are ignored, so use `--name` or `--app-id` in that case.
+- `.asc/project.json` is written relative to the current directory. Nothing is written to App Store Connect.
+- Older `project.json` files without contact fields still load.
+- CLI-only; there is no REST endpoint.
 
-### `ProjectConfigStorage` (protocol)
+## See also
 
-```swift
-@Mockable
-public protocol ProjectConfigStorage: Sendable {
-    func save(_ config: ProjectConfig) throws
-    func load() throws -> ProjectConfig?
-    func delete() throws
-}
-```
-
-### `XcodeProjectScanner` (private)
-
-Private enum inside `InitCommand.swift`. Scans `.xcodeproj/project.pbxproj` files in the current directory and extracts literal `PRODUCT_BUNDLE_IDENTIFIER` values (excludes `$`-variable references).
-
----
-
-## File Map
-
-**Sources:**
-
-```
-Sources/
-├── Domain/Projects/
-│   ├── ProjectConfig.swift         [new — domain model + AffordanceProviding]
-│   └── ProjectConfigStorage.swift  [new — @Mockable save/load/delete protocol]
-├── Infrastructure/Projects/
-│   └── FileProjectConfigStorage.swift  [new — reads/writes .asc/project.json]
-└── ASCCommand/
-    ├── ASC.swift                   [modified — registered InitCommand.self]
-    └── Commands/Init/
-        └── InitCommand.swift       [new — asc init with 3 modes + XcodeProjectScanner]
-```
-
-**Wiring:**
-
-| File | Role |
-|------|------|
-| `InitCommand.swift` | Command entry point; calls `ClientProvider.makeAppRepository()` + `FileProjectConfigStorage()` |
-| `ClientProvider.swift` | No change needed — `makeAppRepository()` already exists |
-
-**Tests:**
-
-```
-Tests/
-├── DomainTests/Projects/
-│   └── ProjectConfigTests.swift             [10 tests: contact fields, affordances, Codable]
-├── InfrastructureTests/Projects/
-│   └── FileProjectConfigStorageTests.swift  [7 tests: round-trip + backward compat]
-└── ASCCommandTests/Commands/Init/
-    └── InitCommandTests.swift               [8 tests: 3 modes + contact flags + error cases]
-```
-
----
-
-## API Reference
-
-`--app-id` mode makes one extra API call; `--name` and auto-detect each list all apps first:
-
-| Mode | API calls |
-|------|-----------|
-| `--app-id` | `GET /v1/apps/{id}` → 1 call |
-| `--name` | `GET /v1/apps` → 1 call, then local match |
-| auto-detect | `GET /v1/apps` → 1 call, then local bundle ID match |
-
-No writes to App Store Connect. All persistence is local file I/O.
-
----
-
-## Testing
-
-```swift
-@Test func `app-id resolves app by ID and saves config`() async throws {
-    let mockRepo = MockAppRepository()
-    let mockStorage = MockProjectConfigStorage()
-    given(mockRepo).getApp(id: .any).willReturn(
-        App(id: "app-123", name: "My App", bundleId: "com.example.app")
-    )
-    given(mockStorage).save(.any).willReturn()
-
-    var cmd = try InitCommand.parse(["--app-id", "app-123", "--pretty"])
-    let output = try await cmd.execute(repo: mockRepo, storage: mockStorage)
-
-    #expect(output.contains("app-123"))
-    #expect(output.contains("com.example.app"))
-}
-```
-
-Run tests:
-
-```bash
-swift test --filter 'FileProjectConfigStorage'
-swift test --filter 'InitCommand'
-```
-
----
-
-## Extending
-
-**Read project context in other commands** — any command can optionally load `.asc/project.json` to infer `--app-id` if not provided:
-
-```swift
-if appId == nil {
-    let storage = FileProjectConfigStorage()
-    if let config = try? storage.load() {
-        appId = config.appId
-    }
-}
-```
-
-**Auto-apply review contact** — when running `asc version-review-detail update`, read contact info from `.asc/project.json` as defaults:
-
-```swift
-let storage = FileProjectConfigStorage()
-if let config = try? storage.load(), config.hasReviewContact {
-    // Use config.contactEmail, config.contactPhone, etc. as defaults
-}
-```
-
-**Store active version ID** — extend `ProjectConfig` with an optional `activeVersionId` that `asc versions create` or `asc versions list` can update automatically.
+- [Version review detail](../version-review-detail/README.md)
+- [Check readiness](../version-check-readiness/README.md)

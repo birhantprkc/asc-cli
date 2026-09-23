@@ -1,31 +1,43 @@
+---
+description: Manage in-app purchases and auto-renewable subscriptions end to end, from creation and pricing to offer codes, offers, review assets and submission. Use when setting up or changing anything a user can buy inside an app.
+---
+
 # In-App Purchases & Subscriptions
 
-End-to-end management of in-app purchases (consumable, non-consumable, non-renewing subscriptions) and auto-renewable subscriptions, with full lifecycle, pricing, offer-code, promotional/win-back offer, and review-asset coverage.
+In-app purchases (consumable, non-consumable, non-renewing subscriptions) and auto-renewable subscriptions: lifecycle, pricing, offer codes, promotional and win-back offers, and review assets. Every flag: [iap](../../commands.md#asc-iap), [subscription-groups](../../commands.md#asc-subscription-groups), [subscriptions](../../commands.md#asc-subscriptions).
 
-Every command also serves as a REST endpoint when running `asc web-server`. Affordances embedded in JSON output are state-aware — they only suggest the next legal action.
+Every command also serves as a REST endpoint when running `asc web-server`. Affordances in the JSON output are state-aware: they only suggest the next legal action.
 
-## Sub-documents
+## Quick start
+```bash
+asc iap create --app-id <APP_ID> --reference-name "Gold Coins" --product-id com.app.goldcoins --type consumable
+asc subscription-groups create --app-id <APP_ID> --reference-name "Premium"
+asc subscriptions create --group-id <GROUP_ID> --name "Monthly" --product-id com.app.monthly --period ONE_MONTH
+```
 
-| Document | Covers |
+## Workflows
+Each job has its own page in this folder:
+
+| Page | Covers |
 |----------|--------|
-| [lifecycle.md](lifecycle.md) | IAP & Subscription `update` / `delete` / `unsubmit` plus subscription-group / introductory-offer lifecycle. |
+| [lifecycle.md](lifecycle.md) | IAP & subscription `update` / `delete` / `unsubmit`, plus subscription-group and introductory-offer lifecycle. |
 | [pricing.md](pricing.md) | IAP base-territory pricing and subscription per-territory pricing (incl. `proceedsYear2`). |
-| [offer-codes.md](offer-codes.md) | IAP & subscription offer codes — 3-level hierarchy plus per-territory price listing and one-time-code redemption value fetch. |
+| [offer-codes.md](offer-codes.md) | IAP & subscription offer codes: 3-level hierarchy, per-territory price listing, one-time-code redemption value fetch. |
 | [group-localizations.md](group-localizations.md) | Per-locale display name and Custom App Name for subscription groups. |
 | [promotional-offers.md](promotional-offers.md) | Subscription promotional offers with per-territory inline pricing. |
 | [win-back-offers.md](win-back-offers.md) | Win-back offers with eligibility rules, priority, promotion intent, and per-territory pricing. |
-| [review-assets.md](review-assets.md) | IAP review screenshots & 1024×1024 promotional images, subscription review screenshots — reserve→upload→commit-with-MD5. |
+| [review-assets.md](review-assets.md) | IAP review screenshots & 1024×1024 promotional images, subscription review screenshots (reserve → upload → commit-with-MD5). |
+| [submission-iris-parity.md](submission-iris-parity.md) | Why first-time IAP submission goes through iris, and the subscription status. |
 
-## REST navigation (`_links`)
-
-When `asc web-server` is running, every IAP and Subscription returned from the list endpoints embeds a populated `_links` map so an agent can fetch its details without knowing URL conventions.
+## REST
+When `asc web-server` is running, every IAP and subscription from the list endpoints embeds a `_links` map, so an agent can fetch its details without knowing URL conventions.
 
 | Resource | List endpoint | Embedded `_links` keys |
 |----------|---------------|------------------------|
 | `InAppPurchase` | `GET /api/v1/apps/:appId/iap` | `listLocalizations`, `listOfferCodes`, `listImages`, `listPricePoints`, `getAvailability`, `getReviewScreenshot`, `update`, `delete`, `submit` (only when `READY_TO_SUBMIT`), `createLocalization` |
 | `Subscription` | `GET /api/v1/subscription-groups/:groupId/subscriptions` | `listLocalizations`, `listIntroductoryOffers`, `listOfferCodes`, `listPromotionalOffers`, `listWinBackOffers`, `listPricePoints`, `getAvailability`, `getReviewScreenshot`, `update`, `delete`, `submit` (only when `READY_TO_SUBMIT`), `createLocalization`, `createIntroductoryOffer`, `createPromotionalOffer` |
 
-Each `_links` entry resolves to a wired controller. For an IAP at id `iap-7`:
+For an IAP with id `iap-7`:
 
 | Link key | Method | URL |
 |----------|--------|-----|
@@ -36,87 +48,15 @@ Each `_links` entry resolves to a wired controller. For an IAP at id `iap-7`:
 | `getReviewScreenshot` | GET | `/api/v1/iap/iap-7/review-screenshot` |
 | `listImages` | GET | `/api/v1/iap/iap-7/images` |
 
-The same shape applies to subscriptions under `/api/v1/subscriptions/{id}/…` (replace `iap` with `subscriptions` and `getReviewScreenshot`/`listImages` with subscription-specific equivalents; `listIntroductoryOffers` → `/introductory-offers`).
+Subscriptions follow the same shape under `/api/v1/subscriptions/{id}/…` (`listIntroductoryOffers` → `/introductory-offers`).
 
-Related top-level features:
+## Gotchas
+Affordances hide themselves when the action wouldn't succeed:
+- `submit` only appears on an IAP or subscription whose state is `READY_TO_SUBMIT`.
+- A promotional image has no `delete` while it is pending review.
+- A review screenshot still awaiting upload offers only `upload`, not `delete`.
+- A subscription price point without a territory has no `setPrice`.
+- Inactive custom codes and one-time-use codes have no `deactivate`.
 
-- [promoted-purchases.md](../promoted-purchases/README.md) — App Store product page promoted slots.
-- [iap-subscription-availability.md](../iap-subscription-availability/README.md) — territory availability for apps, IAPs, and subscriptions.
-
-## Architecture
-
-```
-ASCCommand                            Infrastructure                            Domain
-─────────────────────────────────────────────────────────────────────────────────────────
-IAP*                                  SDKInAppPurchaseRepository                InAppPurchase
-IAPSubmit / Unsubmit                  SDKInAppPurchaseSubmissionRepository      InAppPurchaseSubmission
-IAPLocalizations*                     SDKInAppPurchaseLocalizationRepository    InAppPurchaseLocalization
-IAPPricePointsList / IAPPricesSet     SDKInAppPurchasePriceRepository           InAppPurchasePricePoint, PriceSchedule
-IAPOfferCodes*                        SDKInAppPurchaseOfferCodeRepository       InAppPurchaseOfferCode + Custom + OneTime + Price
-IAPReviewScreenshot* / IAPImages*     SDKInAppPurchaseReviewRepository          InAppPurchaseReviewScreenshot, PromotionalImage
-
-SubscriptionGroups*                   SDKSubscriptionGroupRepository            SubscriptionGroup
-SubscriptionGroupLocalizations*       SDKSubscriptionGroupLocalizationRepository SubscriptionGroupLocalization
-Subscriptions*                        SDKSubscriptionRepository                 Subscription
-SubscriptionsSubmit / Unsubmit        SDKSubscriptionSubmissionRepository       SubscriptionSubmission
-SubscriptionLocalizations*            SDKSubscriptionLocalizationRepository     SubscriptionLocalization
-SubscriptionPricePointsList /         SDKSubscriptionPriceRepository            SubscriptionPricePoint, SubscriptionPrice
-  SubscriptionPricesSet                                                         (proceedsYear2)
-SubscriptionOffers* (intro)           SDKSubscriptionIntroductoryOfferRepository SubscriptionIntroductoryOffer
-SubscriptionPromotionalOffers*        SDKSubscriptionPromotionalOfferRepository SubscriptionPromotionalOffer + Price + Input
-WinBackOffers*                        SDKWinBackOfferRepository                 WinBackOffer + Price + Input
-SubscriptionOfferCodes*               SDKSubscriptionOfferCodeRepository        SubscriptionOfferCode + Custom + OneTime + Price
-SubscriptionReviewScreenshot*         SDKSubscriptionReviewRepository           SubscriptionReviewScreenshot
-
-Web/Controllers/                      RESTRoutes wires repos →                  AffordanceProviding
-  IAPController, IAPReviewController,   controllers; APIRoot                      .structuredAffordances
-  SubscriptionGroupsController, …       advertises top-level resources            renders to both CLI + REST
-```
-
-**Dependency direction:** `ASCCommand → Infrastructure → Domain`. Domain has zero I/O.
-
-## State-aware affordances
-
-Affordances suppress themselves when the action wouldn't succeed:
-
-| Aggregate | Trigger | Affordance suppressed |
-|-----------|---------|-----------------------|
-| `InAppPurchase` / `Subscription` | `state != .readyToSubmit` | `submit` |
-| `InAppPurchasePromotionalImage` | `state.isPendingReview == true` | `delete` |
-| `InAppPurchaseReviewScreenshot` / `SubscriptionReviewScreenshot` | `assetState == .awaitingUpload` | `delete` (only `upload` offered as recovery) |
-| `SubscriptionPricePoint` | `territory == nil` | `setPrice` |
-| `*OfferCodeCustomCode` / `*OfferCodeOneTimeUseCode` | `isActive == false` | `deactivate` |
-
-## SDK gaps worked around
-
-The generated `appstoreconnect-swift-sdk` is incomplete in three places:
-
-1. **`DELETE /v1/inAppPurchaseSubmissions/{id}`** — used by `iap unsubmit`. Built with manual `Request<Void>(path:method:id:)`.
-2. **`DELETE /v1/subscriptionSubmissions/{id}`** — used by `subscriptions unsubmit`. Same manual pattern.
-3. **`WinBackOfferPriceInlineCreate`** — generated entity is missing `territory` + `subscriptionPricePoint` relationships, so `win-back-offers create` builds the body via a private type-erased `AnyCodable` enum in `SDKWinBackOfferRepository`.
-
-## File map
-
-```
-Sources/Domain/Apps/InAppPurchases/   # All IAP-side domain models
-Sources/Domain/Apps/Subscriptions/    # All subscription-side domain models
-Sources/Infrastructure/Apps/…         # SDK adapters mirroring the Domain folder structure
-Sources/ASCCommand/Commands/IAP*/, Subscription*/, WinBackOffers/, …
-Sources/ASCCommand/Commands/Web/Controllers/…Controller.swift
-```
-
-**Wiring files:**
-
-| File | Role |
-|------|------|
-| `Sources/ASCCommand/ASC.swift` | Registers every command group as a subcommand. |
-| `Sources/ASCCommand/ClientProvider.swift` | Static factory per repository. |
-| `Sources/Infrastructure/Client/ClientFactory.swift` | Auth → SDK repository instantiation. |
-| `Sources/ASCCommand/Commands/Web/RESTRoutes.swift` | Wires controllers per repository. |
-
-## Testing
-
-```bash
-# Domain + infra + commands + REST for IAP & subscriptions.
-swift test --filter 'IAP|Subscription|WinBackOffer'
-```
+## See also
+[promoted-purchases](../promoted-purchases/README.md) · [iap-subscription-availability](../iap-subscription-availability/README.md) · [submit-with-products](../submit-with-products/README.md)

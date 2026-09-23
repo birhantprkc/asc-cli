@@ -6,7 +6,7 @@ Every `asc` command and flag, generated from the binary. For how to use a featur
 **Global flags** (accepted by every command, not repeated below):
 `--output json|table|markdown` (default `json`) · `--pretty` · `--timeout <30s|2m>`
 
-**Commands:** [apps](#asc-apps) · [init](#asc-init) · [versions](#asc-versions) · [version-localizations](#asc-version-localizations) · [screenshot-sets](#asc-screenshot-sets) · [screenshots](#asc-screenshots) · [app-infos](#asc-app-infos) · [app-info-localizations](#asc-app-info-localizations) · [builds](#asc-builds) · [testflight](#asc-testflight) · [auth](#asc-auth) · [tui](#asc-tui) · [bundle-ids](#asc-bundle-ids) · [certificates](#asc-certificates) · [devices](#asc-devices) · [profiles](#asc-profiles) · [app-preview-sets](#asc-app-preview-sets) · [app-previews](#asc-app-previews) · [iap](#asc-iap) · [iap-equalizations](#asc-iap-equalizations) · [iap-localizations](#asc-iap-localizations) · [iap-price-schedule](#asc-iap-price-schedule) · [subscription-groups](#asc-subscription-groups) · [subscriptions](#asc-subscriptions) · [subscription-localizations](#asc-subscription-localizations) · [subscription-group-localizations](#asc-subscription-group-localizations) · [subscription-price-schedule](#asc-subscription-price-schedule) · [subscription-equalizations](#asc-subscription-equalizations) · [subscription-offers](#asc-subscription-offers) · [subscription-promotional-offers](#asc-subscription-promotional-offers) · [win-back-offers](#asc-win-back-offers) · [promoted-purchases](#asc-promoted-purchases) · [experiments](#asc-experiments) · [experiment-treatments](#asc-experiment-treatments) · [experiment-treatment-localizations](#asc-experiment-treatment-localizations) · [iap-review-screenshot](#asc-iap-review-screenshot) · [iap-images](#asc-iap-images) · [subscription-review-screenshot](#asc-subscription-review-screenshot) · [subscription-images](#asc-subscription-images) · [subscription-offer-codes](#asc-subscription-offer-codes) · [subscription-offer-code-custom-codes](#asc-subscription-offer-code-custom-codes) · [subscription-offer-code-one-time-codes](#asc-subscription-offer-code-one-time-codes) · [iap-offer-codes](#asc-iap-offer-codes) · [iap-offer-code-custom-codes](#asc-iap-offer-code-custom-codes) · [iap-offer-code-one-time-codes](#asc-iap-offer-code-one-time-codes) · [app-shots](#asc-app-shots) · [age-rating](#asc-age-rating) · [app-categories](#asc-app-categories) · [version-review-detail](#asc-version-review-detail) · [plugins](#asc-plugins) · [skills](#asc-skills) · [app-wall](#asc-app-wall) · [users](#asc-users) · [user-invitations](#asc-user-invitations) · [xcode-cloud](#asc-xcode-cloud) · [game-center](#asc-game-center) · [app-clips](#asc-app-clips) · [app-clip-experiences](#asc-app-clip-experiences) · [app-clip-experience-localizations](#asc-app-clip-experience-localizations) · [sales-reports](#asc-sales-reports) · [finance-reports](#asc-finance-reports) · [analytics-reports](#asc-analytics-reports) · [reviews](#asc-reviews) · [review-responses](#asc-review-responses) · [perf-metrics](#asc-perf-metrics) · [diagnostics](#asc-diagnostics) · [diagnostic-logs](#asc-diagnostic-logs) · [beta-review](#asc-beta-review) · [beta-app-localizations](#asc-beta-app-localizations) · [review-submissions](#asc-review-submissions) · [app-availability](#asc-app-availability) · [iap-availability](#asc-iap-availability) · [subscription-availability](#asc-subscription-availability) · [territories](#asc-territories) · [web-server](#asc-web-server) · [iris](#asc-iris) · [simulators](#asc-simulators)
+**Commands:** [apps](#asc-apps) · [init](#asc-init) · [versions](#asc-versions) · [version-localizations](#asc-version-localizations) · [screenshot-sets](#asc-screenshot-sets) · [screenshots](#asc-screenshots) · [app-infos](#asc-app-infos) · [app-info-localizations](#asc-app-info-localizations) · [builds](#asc-builds) · [testflight](#asc-testflight) · [auth](#asc-auth) · [version](#asc-version) · [tui](#asc-tui) · [bundle-ids](#asc-bundle-ids) · [certificates](#asc-certificates) · [devices](#asc-devices) · [profiles](#asc-profiles) · [app-preview-sets](#asc-app-preview-sets) · [app-previews](#asc-app-previews) · [iap](#asc-iap) · [iap-equalizations](#asc-iap-equalizations) · [iap-localizations](#asc-iap-localizations) · [iap-price-schedule](#asc-iap-price-schedule) · [subscription-groups](#asc-subscription-groups) · [subscriptions](#asc-subscriptions) · [subscription-localizations](#asc-subscription-localizations) · [subscription-group-localizations](#asc-subscription-group-localizations) · [subscription-price-schedule](#asc-subscription-price-schedule) · [subscription-equalizations](#asc-subscription-equalizations) · [subscription-offers](#asc-subscription-offers) · [subscription-promotional-offers](#asc-subscription-promotional-offers) · [win-back-offers](#asc-win-back-offers) · [promoted-purchases](#asc-promoted-purchases) · [experiments](#asc-experiments) · [experiment-treatments](#asc-experiment-treatments) · [experiment-treatment-localizations](#asc-experiment-treatment-localizations) · [iap-review-screenshot](#asc-iap-review-screenshot) · [iap-images](#asc-iap-images) · [subscription-review-screenshot](#asc-subscription-review-screenshot) · [subscription-images](#asc-subscription-images) · [subscription-offer-codes](#asc-subscription-offer-codes) · [subscription-offer-code-custom-codes](#asc-subscription-offer-code-custom-codes) · [subscription-offer-code-one-time-codes](#asc-subscription-offer-code-one-time-codes) · [iap-offer-codes](#asc-iap-offer-codes) · [iap-offer-code-custom-codes](#asc-iap-offer-code-custom-codes) · [iap-offer-code-one-time-codes](#asc-iap-offer-code-one-time-codes) · [app-shots](#asc-app-shots) · [age-rating](#asc-age-rating) · [app-categories](#asc-app-categories) · [version-review-detail](#asc-version-review-detail) · [plugins](#asc-plugins) · [skills](#asc-skills) · [app-wall](#asc-app-wall) · [users](#asc-users) · [user-invitations](#asc-user-invitations) · [xcode-cloud](#asc-xcode-cloud) · [game-center](#asc-game-center) · [app-clips](#asc-app-clips) · [app-clip-experiences](#asc-app-clip-experiences) · [app-clip-experience-localizations](#asc-app-clip-experience-localizations) · [sales-reports](#asc-sales-reports) · [finance-reports](#asc-finance-reports) · [analytics-reports](#asc-analytics-reports) · [reviews](#asc-reviews) · [review-responses](#asc-review-responses) · [perf-metrics](#asc-perf-metrics) · [diagnostics](#asc-diagnostics) · [diagnostic-logs](#asc-diagnostic-logs) · [beta-review](#asc-beta-review) · [beta-app-localizations](#asc-beta-app-localizations) · [review-submissions](#asc-review-submissions) · [app-availability](#asc-app-availability) · [iap-availability](#asc-iap-availability) · [subscription-availability](#asc-subscription-availability) · [territories](#asc-territories) · [web-server](#asc-web-server) · [iris](#asc-iris) · [simulators](#asc-simulators)
 
 ## asc apps
 
@@ -102,12 +102,13 @@ asc versions list --app-id <app-id>
 Create a new App Store version
 
 ```
-asc versions create --app-id <app-id> --platform <platform>
+asc versions create --app-id <app-id> --version <version> --platform <platform>
 ```
 
 | Flag | Required | Default | Description |
 |---|---|---|---|
 | `--app-id` | yes |  | App ID |
+| `--version` | yes |  | Version string (e.g. 1.2.3) |
 | `--platform` | yes |  | Platform: ios, macos, tvos, watchos, visionos |
 
 ### asc versions update
@@ -115,12 +116,13 @@ asc versions create --app-id <app-id> --platform <platform>
 Update an App Store version's version string, copyright, or release schedule
 
 ```
-asc versions update --version-id <version-id> [--copyright <copyright>] [--release-type <release-type>] [--earliest-release-date <earliest-release-date>]
+asc versions update --version-id <version-id> [--version <version>] [--copyright <copyright>] [--release-type <release-type>] [--earliest-release-date <earliest-release-date>]
 ```
 
 | Flag | Required | Default | Description |
 |---|---|---|---|
 | `--version-id` | yes |  | App Store version ID |
+| `--version` |  |  | New version string (e.g. 1.2.3) |
 | `--copyright` |  |  | Copyright line shown on the App Store page (e.g. "© 2026 Acme") |
 | `--release-type` |  |  | Release type: MANUAL, AFTER_APPROVAL, or SCHEDULED |
 | `--earliest-release-date` |  |  | ISO-8601 timestamp for SCHEDULED releases (e.g. 2026-06-01T00:00:00Z) |
@@ -384,13 +386,14 @@ Manage builds
 List builds
 
 ```
-asc builds list [--app-id <app-id>] [--platform <platform>] [--limit <limit>]
+asc builds list [--app-id <app-id>] [--platform <platform>] [--version <version>] [--limit <limit>]
 ```
 
 | Flag | Required | Default | Description |
 |---|---|---|---|
 | `--app-id` |  |  | Filter by app ID |
 | `--platform` |  |  | Filter by platform (ios, macos, tvos, visionos) |
+| `--version` |  |  | Filter by version (e.g. 1.0.0) |
 | `--limit` |  |  | Maximum number of builds to return |
 
 ### asc builds next-number
@@ -398,12 +401,13 @@ asc builds list [--app-id <app-id>] [--platform <platform>] [--limit <limit>]
 Get the next build number for a version
 
 ```
-asc builds next-number --app-id <app-id> --platform <platform>
+asc builds next-number --app-id <app-id> --version <version> --platform <platform>
 ```
 
 | Flag | Required | Default | Description |
 |---|---|---|---|
 | `--app-id` | yes |  | App ID (required) |
+| `--version` | yes |  | Version string (e.g. 1.0.0) |
 | `--platform` | yes |  | Platform (ios, macos, tvos, visionos) |
 
 ### asc builds upload
@@ -411,13 +415,14 @@ asc builds next-number --app-id <app-id> --platform <platform>
 Upload an IPA or PKG to App Store Connect
 
 ```
-asc builds upload --app-id <app-id> --file <file> --build-number <build-number> [--platform <platform>] [--wait]
+asc builds upload --app-id <app-id> --file <file> --version <version> --build-number <build-number> [--platform <platform>] [--wait]
 ```
 
 | Flag | Required | Default | Description |
 |---|---|---|---|
 | `--app-id` | yes |  | App ID |
 | `--file` | yes |  | Path to .ipa (iOS/tvOS/visionOS) or .pkg (macOS) file |
+| `--version` | yes |  | CFBundleShortVersionString (e.g. 1.0.0) |
 | `--build-number` | yes |  | CFBundleVersion build number (e.g. 42) |
 | `--platform` |  |  | Platform: ios, macos, tvos, visionos (auto-detected from file extension) |
 | `--wait` |  |  | Poll until build processing completes |
@@ -427,7 +432,7 @@ asc builds upload --app-id <app-id> --file <file> --build-number <build-number> 
 Archive and export an Xcode project for App Store / TestFlight
 
 ```
-asc builds archive --scheme <scheme> [--workspace <workspace>] [--project <project>] [--platform <platform>] [--configuration <configuration>] [--export-method <export-method>] [--signing-style <signing-style>] [--team-id <team-id>] [--output-dir <output-dir>] [--upload] [--app-id <app-id>] [--build-number <build-number>]
+asc builds archive --scheme <scheme> [--workspace <workspace>] [--project <project>] [--platform <platform>] [--configuration <configuration>] [--export-method <export-method>] [--signing-style <signing-style>] [--team-id <team-id>] [--output-dir <output-dir>] [--upload] [--app-id <app-id>] [--version <version>] [--build-number <build-number>]
 ```
 
 | Flag | Required | Default | Description |
@@ -443,6 +448,7 @@ asc builds archive --scheme <scheme> [--workspace <workspace>] [--project <proje
 | `--output-dir` |  | `.build` | Output directory for archive and export (default: .build) |
 | `--upload` |  |  | Upload the exported IPA/PKG to App Store Connect after archiving |
 | `--app-id` |  |  | App ID (required if --upload) |
+| `--version` |  |  | Version string (required if --upload, e.g. 1.0.0) |
 | `--build-number` |  |  | Build number (required if --upload, e.g. 42) |
 
 ### asc builds uploads list
@@ -709,6 +715,14 @@ asc auth update [--name <name>] [--vendor-number <vendor-number>]
 |---|---|---|---|
 | `--name` |  |  | Account name (defaults to active account) |
 | `--vendor-number` |  |  | Vendor number for financial/sales reports |
+
+## asc version
+
+Print the CLI version
+
+```
+asc version
+```
 
 ## asc tui
 
@@ -3267,7 +3281,7 @@ Download sales and trends reports
 Download a sales report
 
 ```
-asc sales-reports download --report-type <report-type> --sub-type <sub-type> --frequency <frequency> [--vendor-number <vendor-number>] [--report-date <report-date>]
+asc sales-reports download --report-type <report-type> --sub-type <sub-type> --frequency <frequency> [--vendor-number <vendor-number>] [--report-date <report-date>] [--version <version>]
 ```
 
 | Flag | Required | Default | Description |
@@ -3277,6 +3291,7 @@ asc sales-reports download --report-type <report-type> --sub-type <sub-type> --f
 | `--sub-type` | yes |  | Report sub-type: SUMMARY, DETAILED, etc. |
 | `--frequency` | yes |  | Frequency: DAILY, WEEKLY, MONTHLY, YEARLY |
 | `--report-date` |  |  | Report date (e.g. 2024-01-15) |
+| `--version` |  |  | Report schema version (e.g. 1_4 for SALES/SUMMARY/DAILY). Omit to use Apple's default. |
 
 ### asc sales-reports summary
 
@@ -3894,7 +3909,7 @@ asc iris apps list
 Create a new app
 
 ```
-asc iris apps create --name <name> --bundle-id <bundle-id> --sku <sku> [--primary-locale <primary-locale>] [--platforms <platforms> …]
+asc iris apps create --name <name> --bundle-id <bundle-id> --sku <sku> [--primary-locale <primary-locale>] [--platforms <platforms> …] [--version <version>]
 ```
 
 | Flag | Required | Default | Description |
@@ -3904,6 +3919,7 @@ asc iris apps create --name <name> --bundle-id <bundle-id> --sku <sku> [--primar
 | `--sku` | yes |  | SKU identifier |
 | `--primary-locale` |  | `en-US` | Primary locale (e.g. en-US) |
 | `--platforms` |  | `IOS` | Platforms (e.g. IOS, MAC_OS) |
+| `--version` |  | `1.0` | Initial version string (e.g. 1.0) |
 
 ### asc iris iap-submissions create
 

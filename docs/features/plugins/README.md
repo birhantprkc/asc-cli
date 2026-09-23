@@ -1,176 +1,76 @@
+---
+description: List, install, uninstall, and update compiled asc plugins that add commands, server routes, UI, and affordances. Use when extending asc with marketplace plugins such as ASC Pro.
+---
+
 # Plugins
 
-ASC supports a plugin system based on compiled `.plugin` bundles (dylibs) that extend the CLI with server routes, UI components, CLI commands, and domain affordances. Plugins are discovered from `~/.asc/plugins/` at startup.
+Plugins are compiled `.plugin` bundles that extend asc with CLI commands, server routes, web UI, and extra affordances. They live in `~/.asc/plugins/` and are loaded at startup. Every flag: [command reference](../../commands.md#asc-plugins).
 
-For browsing and installing plugins from a marketplace, see [Plugin Market](../market/README.md).
-
-## Plugin Bundle Structure
-
-```
-~/.asc/plugins/ASCPro.plugin/
-├── manifest.json              # metadata: name, version, server dylib, UI scripts
-├── ASCPro.dylib               # compiled dynamic library
-└── ui/
-    └── sim-stream.js          # web UI scripts (loaded by command-center)
-```
-
-### manifest.json
-
-```json
-{
-  "name": "ASC Pro",
-  "version": "1.0",
-  "server": "ASCPro.dylib",
-  "ui": ["ui/sim-stream.js"]
-}
-```
-
-## CLI Usage
-
-### `asc plugins list`
-
-List installed dylib plugins.
-
+## Quick start
 ```bash
+asc plugins market search --query hello
+asc plugins install --name asc-pro
 asc plugins list --pretty
 ```
 
-### `asc plugins install --name <name>`
+## Workflows
 
-Install a plugin from the marketplace.
-
+### Find and install
+Browsing the marketplace is covered in [Plugin Market](../market/README.md).
 ```bash
+asc plugins market list
+asc plugins market search --query <text>
 asc plugins install --name asc-pro
-```
-
-### `asc plugins uninstall --name <name>`
-
-Remove an installed plugin bundle.
-
-```bash
 asc plugins uninstall --name ASCPro
 ```
 
-### `asc plugins market list`
-
-Browse all available plugins. See [Plugin Market](../market/README.md).
-
-### `asc plugins market search --query <text>`
-
-Search marketplace by keyword. See [Plugin Market](../market/README.md).
-
-### `asc plugins updates`
-
-List installed plugins that have a newer version available in the marketplace. Inspired by Sparkle's appcast — each entry pairs the installed version with the latest marketplace version.
-
+### Keep plugins up to date
+`updates` pairs each installed plugin with the latest marketplace version (Sparkle appcast style); `update` reinstalls the latest and returns the new plugin record.
 ```bash
 asc plugins updates --pretty
+asc plugins update --name Hello
 ```
 
 ```json
 {
   "data": [
     {
+      "name": "Hello",
+      "installedVersion": "1.0.0",
+      "latestVersion": "1.2.0",
       "affordances": {
         "list": "asc plugins updates",
         "update": "asc plugins update --name Hello"
-      },
-      "installedVersion": "1.0.0",
-      "latestVersion": "1.2.0",
-      "name": "Hello"
+      }
     }
   ]
 }
 ```
 
-### `asc plugins update --name <name>`
-
-Apply a marketplace update by uninstalling the named plugin and reinstalling the latest version. Returns the freshly installed `Plugin` record.
-
-```bash
-asc plugins update --name Hello
-```
-
-## REST Endpoints
-
-The same operations are reachable over HTTP via `asc web-server`:
-
-| CLI | REST | Body / Query |
-|-----|------|--------------|
-| `asc plugins list` | `GET /api/v1/plugins` | — |
-| `asc plugins install --name X` | `POST /api/v1/plugins` | `{ "name": "X" }` |
-| `asc plugins uninstall --name X` | `DELETE /api/v1/plugins/:name` | — (returns `204`) |
-| `asc plugins market list` | `GET /api/v1/plugins/market` | — |
-| `asc plugins market search --query Q` | `GET /api/v1/plugins/market?q=Q` | — |
-| `asc plugins updates` | `GET /api/v1/plugins/updates` | — |
-| `asc plugins update --name X` | `POST /api/v1/plugins/:name/update` | — |
-
-**Example:**
+## REST
+| Method | Path | CLI equivalent |
+|---|---|---|
+| GET | `/api/v1/plugins` | `asc plugins list` |
+| POST | `/api/v1/plugins` (body `{ "name": "X" }`) | `asc plugins install --name X` |
+| DELETE | `/api/v1/plugins/:name` (returns `204`) | `asc plugins uninstall --name X` |
+| GET | `/api/v1/plugins/market` | `asc plugins market list` |
+| GET | `/api/v1/plugins/market?q=Q` | `asc plugins market search --query Q` |
+| GET | `/api/v1/plugins/updates` | `asc plugins updates` |
+| POST | `/api/v1/plugins/:name/update` | `asc plugins update --name X` |
 
 ```bash
-# Install
 curl -X POST http://localhost:5173/api/v1/plugins \
-  -H 'content-type: application/json' \
-  -d '{"name":"Hello.plugin"}'
-
-# Search
+  -H 'content-type: application/json' -d '{"name":"Hello.plugin"}'
 curl "http://localhost:5173/api/v1/plugins/market?q=hello"
-
-# Uninstall
 curl -X DELETE http://localhost:5173/api/v1/plugins/Hello.plugin
-
-# Check for updates (Sparkle-style appcast)
 curl http://localhost:5173/api/v1/plugins/updates
-
-# Apply an update
 curl -X POST http://localhost:5173/api/v1/plugins/Hello/update
 ```
 
-## Plugin Protocol
+## Gotchas
+- `update` is uninstall + reinstall of the latest marketplace version, not an in-place patch.
+- The market search query is `--query` on the CLI but `?q=` over REST.
+- Plugins can add affordances to built-in models; for example ASC Pro adds `stream` to booted [simulators](../simulators/README.md). Those keys only appear while the plugin is installed.
 
-Plugins export a C entry point and conform to `ASCPluginBase`:
-
-```swift
-@_cdecl("ascPlugin")
-public func ascPlugin() -> UnsafeMutableRawPointer {
-    Unmanaged.passRetained(MyPlugin()).toOpaque()
-}
-
-public final class MyPlugin: NSObject, ASCPluginBase {
-    public let name = "My Plugin"
-    public var commands: [Any] { [] }
-
-    public func configureRoutes(_ router: Any) {
-        // Register HTTP/WebSocket routes
-    }
-}
-```
-
-## AffordanceRegistry
-
-Plugins extend domain model affordances at runtime using structured `Affordance` values that render to both CLI commands and REST `_links`:
-
-```swift
-AffordanceRegistry.register(Simulator.self) { id, props in
-    guard props["isBooted"] == "true" else { return [] }
-    return [Affordance(key: "stream", command: "simulators", action: "stream", params: ["udid": id])]
-}
-```
-
-This produces:
-- **CLI**: `"stream": "asc simulators stream --udid <id>"`
-- **REST**: `"stream": {"href": "/api/v1/simulators/<id>/stream", "method": "POST"}`
-
-## Architecture
-
-```
-PluginLoader.discover()
-  → scans ~/.asc/plugins/ for .plugin, .framework, .dylib
-  → loads via dlopen/dlsym("ascPlugin")
-  → returns [LoadedPlugin] with name, slug, uiScripts
-
-ASCWebServer.buildRouter()
-  → calls plugin.configureRoutes(routerPtr)
-  → serves plugin UI scripts at /api/plugins/{slug}/ui/*
-  → GET /api/plugins returns manifest list for web app
-```
+## See also
+[Writing a plugin](authoring.md) · [Plugin Market](../market/README.md) · [Simulators](../simulators/README.md) · [App Shots Themes](../app-shots-themes/README.md)

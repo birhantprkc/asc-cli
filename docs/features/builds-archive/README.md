@@ -1,84 +1,41 @@
+---
+description: Archive an Xcode project with xcodebuild, export an IPA or PKG, and optionally upload it to App Store Connect in one command. Use when going from an Xcode project to TestFlight without running xcodebuild by hand.
+---
+
 # Builds Archive & Export
 
-Archive and export Xcode projects directly from the CLI, with optional upload to App Store Connect.
+Archive and export Xcode projects from the CLI, with optional upload to App Store Connect. Every flag: [command reference](../../commands.md#asc-builds-archive).
 
-## CLI Usage
-
-### `asc builds archive`
-
-Archive an Xcode project, export an IPA/PKG, and optionally upload to App Store Connect.
-
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--scheme` | Yes | — | Xcode scheme to archive |
-| `--workspace` | No | auto-detected | Path to `.xcworkspace` |
-| `--project` | No | auto-detected | Path to `.xcodeproj` |
-| `--platform` | No | `ios` | `ios`, `macos`, `tvos`, `visionos` |
-| `--configuration` | No | `Release` | Build configuration |
-| `--export-method` | No | `app-store` | `app-store`, `ad-hoc`, `development`, `enterprise` |
-| `--output-dir` | No | `.build` | Output directory for archive and export |
-| `--upload` | No | `false` | Chain into App Store Connect upload |
-| `--app-id` | If `--upload` | — | App ID for upload |
-| `--version` | If `--upload` | — | Version string (e.g. `1.0.0`) |
-| `--build-number` | If `--upload` | — | Build number (e.g. `42`) |
-
-#### Examples
+## Quick start
 
 ```bash
-# Basic archive + export (produces IPA in .build/export/)
-asc builds archive --scheme MyApp
-
-# Archive for macOS
-asc builds archive --scheme MyMacApp --platform macos
-
-# Archive with specific workspace
-asc builds archive --scheme MyApp --workspace MyApp.xcworkspace
-
-# Archive, export, and upload to App Store Connect
+asc builds archive --scheme MyApp                    # IPA in .build/export/
 asc builds archive --scheme MyApp --upload --app-id 123456 --version 1.0.0 --build-number 42
+```
 
-# Ad-hoc distribution
+## Workflows
+
+### Archive and export only
+
+```bash
+asc builds archive --scheme MyMacApp --platform macos
+asc builds archive --scheme MyApp --workspace MyApp.xcworkspace
 asc builds archive --scheme MyApp --export-method ad-hoc --output-dir dist/
 ```
 
-#### JSON Output (archive only)
+The result points to the exported file and offers the upload as the next step:
 
 ```json
 {
-  "data": [
-    {
-      "ipaPath": ".build/export/MyApp.ipa",
-      "exportPath": ".build/export",
-      "affordances": {
-        "upload": "asc builds upload --file .build/export/MyApp.ipa"
-      }
-    }
-  ]
+  "ipaPath": ".build/export/MyApp.ipa",
+  "exportPath": ".build/export",
+  "affordances": {
+    "upload": "asc builds upload --file .build/export/MyApp.ipa"
+  }
 }
 ```
 
-#### JSON Output (with --upload)
-
-```json
-{
-  "data": [
-    {
-      "id": "up-1",
-      "appId": "123456",
-      "version": "1.0.0",
-      "buildNumber": "42",
-      "platform": "IOS",
-      "state": "COMPLETE",
-      "affordances": {
-        "checkStatus": "asc builds uploads get --upload-id up-1",
-        "listBuilds": "asc builds list --app-id 123456"
-      }
-    }
-  ]
-}
-```
-
-## Typical Workflow
+### Archive, upload and hand to TestFlight
 
 ```bash
 # 1. Initialize project context
@@ -87,144 +44,42 @@ asc init
 # 2. Archive, export, and upload in one command
 asc builds archive --scheme MyApp --upload --app-id 123456 --version 1.2.0 --build-number 55
 
-# 3. Add to TestFlight beta group
+# 3. Add to a TestFlight beta group
 asc builds add-beta-group --build-id <build-id> --beta-group-id <group-id>
 
 # 4. Update TestFlight notes
 asc builds update-beta-notes --build-id <build-id> --locale en-US --notes "New features and bug fixes"
 ```
 
-## Architecture
+With `--upload`, the output is the upload record instead:
 
-```
-┌─────────────────────────────────────────────┐
-│ ASCCommand                                   │
-│  BuildsArchive                               │
-│  ├── parse CLI flags                         │
-│  ├── auto-detect workspace/project           │
-│  ├── call runner.archive()                   │
-│  ├── call runner.exportArchive()             │
-│  └── optionally call uploadRepo.uploadBuild()│
-└──────────────────┬──────────────────────────┘
-                   │ depends on
-┌──────────────────▼──────────────────────────┐
-│ Infrastructure                               │
-│  ProcessXcodeBuildRunner                     │
-│  ├── archive(): Process → xcodebuild archive │
-│  └── exportArchive(): Process → xcodebuild   │
-│      -exportArchive + auto-generated plist   │
-└──────────────────┬──────────────────────────┘
-                   │ implements
-┌──────────────────▼──────────────────────────┐
-│ Domain                                       │
-│  XcodeBuildRunner (@Mockable protocol)       │
-│  ArchiveRequest, ArchiveResult               │
-│  ExportRequest, ExportResult, ExportMethod   │
-└─────────────────────────────────────────────┘
-```
-
-## Domain Models
-
-### `ArchiveRequest`
-| Field | Type | Description |
-|-------|------|-------------|
-| `scheme` | `String` | Xcode scheme name |
-| `workspace` | `String?` | Path to `.xcworkspace` |
-| `project` | `String?` | Path to `.xcodeproj` |
-| `platform` | `BuildUploadPlatform` | Target platform |
-| `configuration` | `String` | Build configuration (default: `Release`) |
-| `archivePath` | `String` | Output path for `.xcarchive` |
-
-### `ArchiveResult` (AffordanceProviding)
-| Field | Type | Description |
-|-------|------|-------------|
-| `archivePath` | `String` | Path to created `.xcarchive` |
-| `scheme` | `String` | Scheme that was archived |
-| `platform` | `BuildUploadPlatform` | Platform |
-
-Affordances: `exportArchive`
-
-### `ExportRequest`
-| Field | Type | Description |
-|-------|------|-------------|
-| `archivePath` | `String` | Path to `.xcarchive` to export |
-| `exportPath` | `String` | Output directory for IPA/PKG |
-| `method` | `ExportMethod` | Export method |
-
-### `ExportResult` (AffordanceProviding)
-| Field | Type | Description |
-|-------|------|-------------|
-| `ipaPath` | `String` | Path to exported `.ipa` or `.pkg` |
-| `exportPath` | `String` | Export directory |
-
-Affordances: `upload`
-
-### `ExportMethod`
-`appStore` (`app-store`), `adHoc` (`ad-hoc`), `development`, `enterprise`
-
-### `XcodeBuildRunner` (@Mockable protocol)
-- `archive(request:) -> ArchiveResult`
-- `exportArchive(request:) -> ExportResult`
-
-### `XcodeBuildError`
-- `archiveFailed(exitCode:stderr:)` — xcodebuild archive exited non-zero
-- `exportFailed(exitCode:stderr:)` — xcodebuild -exportArchive exited non-zero
-- `noExportedBinary(exportPath:)` — no `.ipa` or `.pkg` found after export
-
-## File Map
-
-### Sources
-
-```
-Sources/
-├── Domain/Apps/Builds/XcodeBuild/
-│   └── XcodeBuildRunner.swift         # Protocol + request/result models
-├── Infrastructure/Apps/Builds/XcodeBuild/
-│   └── ProcessXcodeBuildRunner.swift   # Process-based implementation
-└── ASCCommand/Commands/Builds/
-    ├── BuildsArchive.swift             # CLI command
-    └── BuildsCommand.swift             # Parent (registers archive)
-```
-
-### Tests
-
-```
-Tests/
-├── DomainTests/Apps/Builds/XcodeBuild/
-│   └── ArchiveExportTests.swift        # Model + affordance tests
-├── InfrastructureTests/Apps/Builds/XcodeBuild/
-│   └── ProcessXcodeBuildRunnerTests.swift  # Shell script integration tests
-└── ASCCommandTests/Commands/Builds/
-    └── BuildsArchiveTests.swift        # Command output tests
-```
-
-## Testing
-
-```bash
-# Run all archive-related tests
-swift test --filter 'ArchiveExport|ProcessXcodeBuildRunner|BuildsArchive'
-```
-
-```swift
-@Test func `archive shows result with export affordance`() async throws {
-    let mockRunner = MockXcodeBuildRunner()
-    given(mockRunner).archive(request: .any)
-        .willReturn(ArchiveResult(archivePath: "/tmp/MyApp.xcarchive", scheme: "MyApp", platform: .iOS))
-    given(mockRunner).exportArchive(request: .any)
-        .willReturn(ExportResult(ipaPath: "/tmp/export/MyApp.ipa", exportPath: "/tmp/export"))
-
-    let cmd = try BuildsArchive.parse(["--scheme", "MyApp", "--pretty"])
-    let output = try await cmd.execute(runner: mockRunner)
-
-    #expect(output.contains("MyApp.ipa"))
-    #expect(output.contains("upload"))
+```json
+{
+  "id": "up-1",
+  "appId": "123456",
+  "version": "1.0.0",
+  "buildNumber": "42",
+  "platform": "IOS",
+  "state": "COMPLETE",
+  "affordances": {
+    "checkStatus": "asc builds uploads get --upload-id up-1",
+    "listBuilds": "asc builds list --app-id 123456"
+  }
 }
 ```
 
-## Extending
+## REST
 
-Natural next steps:
-- **Version/build number injection**: Override `CFBundleShortVersionString` and `CFBundleVersion` before archiving via `agvtool` or build settings
-- **Code signing override**: Add `--team-id` and `--signing-identity` flags to the export options plist
-- **Archive-only mode**: `--skip-export` flag to produce `.xcarchive` without exporting
-- **Clean build**: `--clean` flag to run `xcodebuild clean` before archiving
+Archiving runs `xcodebuild` locally, so it is CLI-only.
+
+## Gotchas
+
+- `--app-id`, `--version` and `--build-number` are required when you pass `--upload`.
+- `--workspace` / `--project` are auto-detected when omitted; pass one if the directory has several.
+- Defaults: `--platform ios`, `--configuration Release`, `--export-method app-store-connect`, `--output-dir .build`.
+- The export options plist is generated for you from `--export-method`.
+- Errors report the `xcodebuild` exit code and stderr, separately for the archive and the export step. The command also fails if export finishes but no `.ipa` or `.pkg` is found.
+
+## See also
+
+[builds-upload](../builds-upload/README.md) · [testflight](../testflight/README.md) · [xcode-cloud](../xcode-cloud/README.md)

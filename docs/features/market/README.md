@@ -1,18 +1,69 @@
+---
+description: Browse, search, install and uninstall asc plugins from the tddworks/asc-registry marketplace, and publish your own plugin to it. Use when finding a plugin to install or listing a new plugin in the registry.
+---
+
 # Plugin Market
 
-Browse, install, and manage dylib plugins that extend the ASC CLI and web server.
+Browse, install and manage dylib plugins that extend the asc CLI and web server. Plugins are listed in the [tddworks/asc-registry](https://github.com/tddworks/asc-registry) registry, and developers add theirs by pull request. Every flag: [command reference](../../commands.md#asc-plugins).
 
-Plugins are listed in the **[tddworks/asc-registry](https://github.com/tddworks/asc-registry)** registry. Developers submit PRs to add their plugins.
-
-## Registry — `tddworks/asc-registry`
-
-The plugin marketplace is powered by a single `registry.json` file hosted at:
-
-```
-https://raw.githubusercontent.com/tddworks/asc-registry/main/registry.json
+## Quick start
+```bash
+asc plugins market list
+asc plugins market search --query sim
+asc plugins install --name asc-pro
+asc plugins list
 ```
 
-### registry.json format
+## Workflows
+
+### Find, install and remove a plugin
+```bash
+asc plugins market list                 # browse everything
+asc plugins market search --query sim   # matches name, description, categories
+asc plugins install --name asc-pro      # use the marketplace "id"
+asc plugins list                        # verify
+asc plugins uninstall --name ASCPro     # use the installed "slug"
+```
+
+Marketplace entries show whether they are already installed, and their affordances change to match:
+
+```json
+{
+  "data" : [
+    {
+      "id" : "asc-pro",
+      "name" : "ASC Pro",
+      "version" : "1.0",
+      "categories" : ["simulators", "streaming"],
+      "downloadURL" : "https://github.com/tddworks/asc-pro/releases/latest/download/ASCPro.plugin.zip",
+      "isInstalled" : false,
+      "affordances" : {
+        "install" : "asc plugins install --name asc-pro",
+        "listMarket" : "asc plugins market list",
+        "viewRepository" : "https://github.com/tddworks/asc-pro"
+      }
+    }
+  ]
+}
+```
+
+### Publish your plugin to the registry
+1. Build the plugin as a `.plugin` bundle (dylib + `manifest.json` + optional `ui/`).
+2. Publish a `.plugin.zip` release asset on your GitHub repo.
+3. Fork [tddworks/asc-registry](https://github.com/tddworks/asc-registry) and add an entry to `registry.json`.
+4. Open a PR. Once it is merged, the plugin appears in `asc plugins market list`.
+
+The zip must extract to a `<Name>.plugin/` directory:
+
+```
+ASCPro.plugin/
+├── manifest.json   # {"name": "ASC Pro", "version": "1.0", "server": "ASCPro.dylib", "ui": ["ui/sim-stream.js"]}
+├── ASCPro.dylib
+└── ui/
+    └── sim-stream.js   # optional web UI scripts
+```
+
+A `registry.json` entry (`id`, `name`, `version`, `description` and `downloadURL` are required; `author`, `repositoryURL` and `categories` are optional):
 
 ```json
 {
@@ -31,262 +82,21 @@ https://raw.githubusercontent.com/tddworks/asc-registry/main/registry.json
 }
 ```
 
-### Field reference
+## REST
+| Method | Path | CLI equivalent |
+|---|---|---|
+| GET | `/api/v1/plugins/market` | `asc plugins market list` |
+| GET | `/api/v1/plugins/market?q=<text>` | `asc plugins market search --query <text>` |
+| GET | `/api/v1/plugins` | `asc plugins list` |
+| POST | `/api/v1/plugins` (body `{"name": "<id>"}`) | `asc plugins install --name` |
+| DELETE | `/api/v1/plugins/:name` | `asc plugins uninstall --name` |
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `id` | Yes | Unique plugin identifier (used in `asc plugins install --name <id>`) |
-| `name` | Yes | Human-readable display name |
-| `version` | Yes | Current version string |
-| `description` | Yes | Short description of what the plugin does |
-| `author` | No | Author or organization name |
-| `repositoryURL` | No | Link to source code |
-| `downloadURL` | Yes | Direct URL to `.plugin.zip` bundle (typically a GitHub release asset) |
-| `categories` | No | Tags for search filtering (e.g. `["simulators", "streaming"]`) |
+## Gotchas
+- `install` takes the marketplace `id` (e.g. `asc-pro`), but `uninstall` takes the installed plugin's `slug`, which is its directory name (e.g. `ASCPro`).
+- The REST search parameter is `q`, not `query`.
+- The registry is a single file: `https://raw.githubusercontent.com/tddworks/asc-registry/main/registry.json`.
+- `install` downloads the zip from `downloadURL` and extracts it into `~/.asc/plugins/`; `uninstall` deletes `~/.asc/plugins/<name>.plugin/`.
+- The web app has a Plugins page with Installed and Marketplace tabs.
 
-### Submitting a plugin
-
-1. Build your plugin as a `.plugin` bundle (dylib + manifest.json + ui/)
-2. Publish a `.plugin.zip` release asset on your GitHub repo
-3. Fork [tddworks/asc-registry](https://github.com/tddworks/asc-registry)
-4. Add your plugin entry to `registry.json`
-5. Open a PR — once merged, your plugin appears in `asc plugins market list`
-
-### Plugin bundle structure
-
-The `.plugin.zip` must extract to a `<Name>.plugin/` directory:
-
-```
-ASCPro.plugin/
-├── manifest.json              # {"name": "ASC Pro", "version": "1.0", "server": "ASCPro.dylib", "ui": ["ui/sim-stream.js"]}
-├── ASCPro.dylib               # compiled dynamic library
-└── ui/
-    └── sim-stream.js          # web UI scripts (optional)
-```
-
----
-
-## CLI Usage
-
-### `asc plugins list`
-
-List installed dylib plugins.
-
-```bash
-asc plugins list --pretty
-```
-
-```json
-{
-  "data" : [
-    {
-      "affordances" : {
-        "browseMarket" : "asc plugins market list",
-        "uninstall" : "asc plugins uninstall --name ASCPro"
-      },
-      "id" : "asc-pro",
-      "name" : "ASC Pro",
-      "slug" : "ASCPro",
-      "uiScripts" : ["ui/sim-stream.js"],
-      "version" : "1.0"
-    }
-  ]
-}
-```
-
-### `asc plugins market list`
-
-Browse all available plugins from the registry.
-
-```bash
-asc plugins market list --pretty
-```
-
-```json
-{
-  "data" : [
-    {
-      "affordances" : {
-        "install" : "asc plugins install --name asc-pro",
-        "listMarket" : "asc plugins market list",
-        "viewRepository" : "https://github.com/tddworks/asc-pro"
-      },
-      "author" : "tddworks",
-      "categories" : ["simulators", "streaming"],
-      "description" : "Simulator streaming, interaction & tunnel sharing",
-      "downloadURL" : "https://github.com/tddworks/asc-pro/releases/latest/download/ASCPro.plugin.zip",
-      "id" : "asc-pro",
-      "isInstalled" : false,
-      "name" : "ASC Pro",
-      "repositoryURL" : "https://github.com/tddworks/asc-pro",
-      "version" : "1.0"
-    }
-  ]
-}
-```
-
-### `asc plugins market search --query <text>`
-
-Search marketplace by keyword (matches name, description, categories).
-
-```bash
-asc plugins market search --query sim --pretty
-```
-
-### `asc plugins install --name <name>`
-
-Download and install a plugin from the marketplace.
-
-```bash
-asc plugins install --name asc-pro
-```
-
-Downloads the `.plugin.zip` from `downloadURL`, extracts to `~/.asc/plugins/`.
-
-### `asc plugins uninstall --name <name>`
-
-Remove an installed plugin bundle.
-
-```bash
-asc plugins uninstall --name ASCPro
-```
-
----
-
-## Typical Workflow
-
-```bash
-# Browse the marketplace
-asc plugins market list
-
-# Search for simulator plugins
-asc plugins market search --query sim
-
-# Install a plugin
-asc plugins install --name asc-pro
-
-# Verify installation
-asc plugins list
-
-# Uninstall when done
-asc plugins uninstall --name ASCPro
-```
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ASCCommand                                                      │
-│    PluginsCommand → PluginsList, PluginsInstall, PluginsUninstall│
-│    PluginsMarket → MarketList, MarketSearch                      │
-│    Web UI: pages/plugins.js (Installed + Marketplace tabs)       │
-├─────────────────────────────────────────────────────────────────┤
-│  Infrastructure                                                  │
-│    PluginMarketRepository (composes [PluginSource])               │
-│      listInstalled() → PluginLoader.discover() → [Plugin]        │
-│      listAvailable() → sources.fetchPlugins() → [MarketPlugin]   │
-│      install(name:) → download zip + unzip to ~/.asc/plugins/    │
-│      uninstall(name:) → rm ~/.asc/plugins/<name>.plugin/         │
-│                                                                   │
-│    GitHubPluginSource                                             │
-│      → fetches registry.json from tddworks/asc-registry       │
-│      → parses into [MarketPlugin]                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  Domain                                                          │
-│    Plugin — installed dylib plugin (id, name, version, slug)     │
-│    MarketPlugin — marketplace listing (id, name, downloadURL)    │
-│    PluginSource — @Mockable protocol for registry sources        │
-│    PluginRepository — @Mockable protocol                         │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Adding more sources
-
-Implement `PluginSource` and add to the sources array in `ClientFactory`:
-
-```swift
-public func makePluginRepository() -> any PluginRepository {
-    PluginMarketRepository(sources: [
-        GitHubPluginSource(owner: "tddworks", repo: "asc-cli-plugins"),
-        MyCustomSource(),  // any PluginSource implementation
-    ])
-}
-```
-
----
-
-## Domain Models
-
-### Plugin (installed)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | String | Same as slug |
-| `name` | String | Display name from manifest |
-| `version` | String | Plugin version |
-| `slug` | String | URL-safe directory name |
-| `uiScripts` | [String] | UI script paths for web app |
-
-**Affordances:** `uninstall`, `browseMarket`
-
-### MarketPlugin (marketplace)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | String | Plugin identifier |
-| `name` | String | Display name |
-| `version` | String | Latest version |
-| `description` | String | Plugin description |
-| `author` | String? | Author name |
-| `repositoryURL` | String? | Source code URL |
-| `downloadURL` | String | Download URL for .plugin.zip |
-| `categories` | [String] | Category tags |
-| `isInstalled` | Bool | Whether locally installed |
-
-**Affordances (state-aware):** `install` (not installed), `uninstall` (installed), `viewRepository` (has URL), `listMarket`
-
----
-
-## File Map
-
-```
-Sources/
-├── Domain/Plugins/
-│   ├── Plugin.swift              — installed dylib plugin model
-│   ├── MarketPlugin.swift        — marketplace listing model
-│   ├── PluginSource.swift        — @Mockable protocol for sources
-│   └── PluginRepository.swift    — @Mockable protocol
-├── Infrastructure/Plugins/
-│   ├── PluginMarketRepository.swift — composes sources + PluginLoader
-│   └── GitHubPluginSource.swift     — fetches registry.json from GitHub
-└── ASCCommand/Commands/Plugins/
-    ├── PluginsCommand.swift       — parent command
-    ├── PluginsList.swift          — asc plugins list
-    ├── PluginsInstall.swift       — asc plugins install
-    ├── PluginsUninstall.swift     — asc plugins uninstall
-    └── PluginsMarket.swift        — asc plugins market (list + search)
-
-Tests/
-├── DomainTests/Plugins/
-│   ├── PluginTests.swift          — Plugin model + affordances
-│   ├── MarketPluginTests.swift    — MarketPlugin model + affordances
-│   └── PluginSourceTests.swift    — PluginSource protocol tests
-├── InfrastructureTests/Plugins/
-│   └── GitHubPluginSourceTests.swift — registry JSON parsing
-└── ASCCommandTests/Commands/Plugins/
-    ├── PluginsListTests.swift     — list command output
-    └── PluginsMarketTests.swift   — market list + search output
-
-apps/asc-web/command-center/
-├── js/presentation/pages/plugins.js — Installed + Marketplace tabs
-├── js/presentation/navigation.js    — page registration
-└── index.html                        — sidebar nav item
-```
-
-## Testing
-
-```bash
-swift test --filter 'PluginTests|MarketPluginTests|PluginsListTests|PluginsMarketTests|PluginSourceTests|GitHubPluginSourceTests'
-```
+## See also
+[plugins](../plugins/README.md)
