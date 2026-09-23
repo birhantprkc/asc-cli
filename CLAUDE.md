@@ -100,6 +100,8 @@ Shared helpers (all in `Sources/ASCCommand/Commands/Web/RESTRoutes.swift`):
 - `restFormat(items)` — REST equivalent of `formatter.formatAgentItems(items, affordanceMode: .rest)`
 - `jsonError(message, status:)` — JSON error response (lives in `Infrastructure/Web/ASCWebServer.swift`; `import Infrastructure`)
 
+Affordance actions map to REST by `RESTPathResolver`: `list`/`get` → GET, `create` and `add` → POST to the parent's collection, `update` → PATCH, `delete` and `remove` → DELETE on the resource, anything else (e.g. `submit`) → POST `…/{id}/{action}`.
+
 Controllers are structs with dependencies injected at init (Hummingbird pattern). Repositories are constructed once in `RESTRoutes.configure`, never per request.
 
 ### Resource Hierarchy
@@ -122,6 +124,8 @@ App → AppStoreVersionExperiment → ExperimentTreatment → ExperimentTreatmen
 App → PerformanceMetric (via perfPowerMetrics)
 Build → PerformanceMetric (via perfPowerMetrics)
 Build → DiagnosticSignatureInfo → DiagnosticLogEntry
+InAppPurchase | Subscription | SubscriptionGroup → ProductVersion
+App → ReviewSubmission → ReviewSubmissionItem → (AppStoreVersion | ProductVersion | …)
 ```
 
 Domain folders are nested to mirror the resource hierarchy:
@@ -144,6 +148,8 @@ Domain/
 │   ├── Experiments/               → AppStoreVersionExperiment, AppStoreVersionExperimentState,
 │   │                                ExperimentTreatment, ExperimentTreatmentLocalization, ExperimentRepository
 │   ├── Pricing/                   → PricingRepository
+│   ├── ProductVersions/           → ProductVersion, ProductVersionKind, ProductVersionState,
+│   │                                ProductVersionRepository (IAP/subscription/group review versions)
 │   ├── TestFlight/                → BetaGroup, BetaTester, TestFlightRepository
 │   └── Performance/              → PerformanceMetric, PerformanceMetricCategory, DiagnosticSignatureInfo,
 │                                    DiagnosticType, DiagnosticLogEntry, PerfMetricsRepository, DiagnosticsRepository
@@ -152,7 +158,9 @@ Domain/
 │   ├── Certificates/              → Certificate, CertificateRepository
 │   ├── Devices/                   → Device, DeviceRepository
 │   └── Profiles/                  → Profile, ProfileRepository
-├── Submissions/                   → ReviewSubmission, ReviewSubmissionState, SubmissionRepository
+├── Submissions/                   → ReviewSubmission, ReviewSubmissionState, ReviewSubmissionItem,
+│                                    ReviewItemTarget, ReviewSubmissionError, SubmissionRepository,
+│                                    SubmissionPlanner/SubmissionPlan (versions submit --with-products)
 ├── Auth/                          → AuthCredentials, AuthProvider, AuthStatus, AuthStorage, CredentialSource, AuthError
 ├── Projects/                      → ProjectConfig, ProjectConfigStorage
 ├── Skills/                        → Skill, SkillCheckResult, SkillConfig, SkillRepository, SkillConfigStorage

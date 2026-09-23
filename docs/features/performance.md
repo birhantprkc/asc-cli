@@ -12,7 +12,7 @@ List performance metrics for an app or a specific build.
 |------|----------|-------------|
 | `--app-id` | One of app-id/build-id | App ID to fetch metrics for |
 | `--build-id` | One of app-id/build-id | Build ID to fetch metrics for |
-| `--metric-type` | No | Filter: HANG, LAUNCH, MEMORY, DISK, BATTERY, TERMINATION, ANIMATION |
+| `--metric-type` | No | Filter: HANG, LAUNCH, MEMORY, DISK, BATTERY, TERMINATION, ANIMATION, STORAGE |
 | `--output` | No | Output format: json (default), table, markdown |
 | `--pretty` | No | Pretty-print JSON output |
 
@@ -197,7 +197,7 @@ Flattened representation of one metric from the deeply nested `XcodeMetrics` API
 | `parentId` | `String` | App ID or Build ID (injected by infrastructure) |
 | `parentType` | `PerfMetricParentType` | `.app` or `.build` |
 | `platform` | `String?` | e.g. `"IOS"` |
-| `category` | `PerformanceMetricCategory` | HANG, LAUNCH, MEMORY, DISK, BATTERY, TERMINATION, ANIMATION |
+| `category` | `PerformanceMetricCategory` | HANG, LAUNCH, MEMORY, DISK, BATTERY, TERMINATION, ANIMATION, STORAGE |
 | `metricIdentifier` | `String` | e.g. `"launchTime"`, `"peakMemory"` |
 | `unit` | `String?` | e.g. `"s"`, `"MB"` |
 | `latestValue` | `Double?` | Most recent data point value |

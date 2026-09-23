@@ -1,6 +1,8 @@
 # Review Submissions
 
-Inspect App Store review submissions: state, rejected items, and per-item drill-in affordances. A *review submission* is the top-level record Apple's review queue operates on; it packages one or more `ReviewSubmissionItem`s, each pointing at a reviewable resource (typically an `AppStoreVersion`).
+Inspect App Store review submissions: state, rejected items, and per-item drill-in affordances. A *review submission* is the top-level record Apple's review queue operates on; it packages one or more `ReviewSubmissionItem`s, each pointing at a reviewable resource — an `AppStoreVersion`, or a version of an in-app purchase, subscription or subscription group.
+
+Building and sending a submission (`review-submissions create`, `items add`, `items remove`, `submit`) and `versions submit --with-products` are documented in [submit-with-products.md](submit-with-products.md).
 
 When a submission's state is `UNRESOLVED_ISSUES`, the per-item state pinpoints *which* attached resource Apple rejected. The reviewer's free-text reasoning is **not exposed via the public ASC API** — it lives only in the App Store Connect Resolution Center web UI. The CLI surfaces the state machine, not the narrative.
 
@@ -106,6 +108,10 @@ asc review-submissions items list --submission-id sub-1 --state REJECTED --prett
 | `GET` | `/api/v1/apps/{appId}/review-submissions` | `--state` → `?state=`, `--limit` → `?limit=` | List submissions for an app |
 | `GET` | `/api/v1/review-submissions/{id}` | — | Get a single submission |
 | `GET` | `/api/v1/review-submissions/{id}/items` | `--state` → `?state=` | List items in a submission (optionally filtered) |
+| `POST` | `/api/v1/apps/{appId}/review-submissions` | `--platform` → body `platform` | Open (or reuse) a draft — see [submit-with-products.md](submit-with-products.md) |
+| `POST` | `/api/v1/review-submissions/{id}/items` | version flag → body key | Add an item |
+| `DELETE` | `/api/v1/review-submissions/items/{itemId}` | — | Remove an item |
+| `POST` | `/api/v1/review-submissions/{id}/submit` | — | Submit the draft |
 
 ```bash
 curl http://localhost:8080/api/v1/review-submissions/sub-1
@@ -241,7 +247,7 @@ Affordances:
 
 ### `ReviewSubmissionItemLinkedResource`
 
-Enum of resource types Apple can attach to a submission item: `APP_STORE_VERSION`, `APP_CUSTOM_PRODUCT_PAGE_VERSION`, `APP_STORE_VERSION_EXPERIMENT`, `APP_EVENT`, `BACKGROUND_ASSET_VERSION`, `GAME_CENTER_ACHIEVEMENT_VERSION`, `GAME_CENTER_ACTIVITY_VERSION`, `GAME_CENTER_CHALLENGE_VERSION`, `GAME_CENTER_LEADERBOARD_SET_VERSION`, `GAME_CENTER_LEADERBOARD_VERSION`. `APP_STORE_VERSION` is by far the common case.
+Enum of resource types Apple can attach to a submission item: `APP_STORE_VERSION`, `APP_CUSTOM_PRODUCT_PAGE_VERSION`, `APP_STORE_VERSION_EXPERIMENT`, `APP_EVENT`, `BACKGROUND_ASSET_VERSION`, `GAME_CENTER_ACHIEVEMENT_VERSION`, `GAME_CENTER_ACTIVITY_VERSION`, `GAME_CENTER_CHALLENGE_VERSION`, `GAME_CENTER_LEADERBOARD_SET_VERSION`, `GAME_CENTER_LEADERBOARD_VERSION`, `IN_APP_PURCHASE_VERSION`, `SUBSCRIPTION_VERSION`, `SUBSCRIPTION_GROUP_VERSION`. `APP_STORE_VERSION` is by far the common case.
 
 ### `SubmissionRepository`
 
@@ -252,6 +258,10 @@ public protocol SubmissionRepository: Sendable {
     func listSubmissions(appId: String, states: [ReviewSubmissionState]?, limit: Int?) async throws -> [ReviewSubmission]
     func getSubmission(id: String) async throws -> ReviewSubmission
     func listSubmissionItems(submissionId: String) async throws -> [ReviewSubmissionItem]
+    func createSubmission(appId: String, platform: AppStorePlatform) async throws -> ReviewSubmission
+    func addItem(submissionId: String, target: ReviewItemTarget) async throws -> ReviewSubmissionItem
+    func removeItem(itemId: String) async throws
+    func submit(submissionId: String) async throws -> ReviewSubmission
 }
 ```
 
@@ -308,8 +318,10 @@ Wiring:
 |-----------|----------|----------|-------------------|
 | List submissions | `GET /v1/reviewSubmissions?filter[app]=…&filter[state]=…&limit=…` | `APIEndpoint.v1.reviewSubmissions.get(parameters:)` | `listSubmissions(appId:states:limit:)` |
 | Get submission | `GET /v1/reviewSubmissions/{id}?include=app` | `APIEndpoint.v1.reviewSubmissions.id(id).get(parameters:)` | `getSubmission(id:)` |
-| List items | `GET /v1/reviewSubmissions/{id}/items` | `APIEndpoint.v1.reviewSubmissions.id(id).items.get(parameters:)` | `listSubmissionItems(submissionId:)` |
+| List items | `GET /v1/reviewSubmissions/{id}/items?include=appStoreVersion,…,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion` | `APIEndpoint.v1.reviewSubmissions.id(id).items.get(parameters:)` | `listSubmissionItems(submissionId:)` |
 | Submit version | `POST /v1/reviewSubmissions` + `POST /v1/reviewSubmissionItems` + `PATCH /v1/reviewSubmissions/{id}` | — | `submitVersion(versionId:)` |
+
+Apple only returns an item's linked resource when the request asks for it with `include=`, so `items list` includes every reviewable kind (v2 experiments only — Apple rejects v1 and v2 experiments in one request).
 
 `filterApp` is required by Apple's API for the top-level list, so `--app-id` is required on `asc review-submissions list`.
 
