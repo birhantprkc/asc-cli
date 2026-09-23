@@ -75,6 +75,8 @@ IAP pricing endpoints live alongside the IAP resource (see [IAP REST routes](../
 | `iap prices set` | `APIEndpoint.v1.inAppPurchasePriceSchedules.post(InAppPurchasePriceScheduleCreateRequest)` |
 | `subscriptions price-points list` | `APIEndpoint.v1.subscriptions.id(id).pricePoints.get(...)` |
 | `subscriptions prices set` | `APIEndpoint.v1.subscriptionPrices.post(SubscriptionPriceCreateRequest)` |
+| `subscriptions prices set-batch` | `APIEndpoint.v1.subscriptions.id(id).patch(SubscriptionUpdateRequest)` — one request with every price inlined (`relationships.prices` → `included: [SubscriptionPriceInlineCreate]`, local ids `${price-N}`), so Apple applies it all-or-nothing; then reads the schedule back |
+| `subscription-price-schedule get` | `APIEndpoint.v1.subscriptions.id(id).prices.get(limit: 200, include: territory,subscriptionPricePoint)` following `meta.paging.nextCursor`, merged over `subscriptionPricePoints.id(first).equalizations` |
 
 ## Testing
 

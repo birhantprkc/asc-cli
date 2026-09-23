@@ -13,3 +13,5 @@ DerivedData/
 *.xcodeproj
 .idea/
 .env
+/examples/blitz-screenshots/.build/
+/apps/asc-web/command-center/node_modules/

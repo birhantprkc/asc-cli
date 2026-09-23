@@ -58,18 +58,28 @@ public struct SDKSubscriptionPriceRepository: SubscriptionPriceRepository, @unch
         subscriptionId: String,
         prices: [Domain.SubscriptionPriceInput]
     ) async throws -> Domain.SubscriptionPriceSchedule {
-        // Apple's API creates one SubscriptionPrice per call. Sequential creates keep
-        // semantics simple (no transactional rollback across territories — the developer
-        // can re-issue a failed entry).
-        for input in prices {
-            _ = try await setPrice(
-                subscriptionId: subscriptionId,
-                territory: input.territory,
-                pricePointId: input.pricePointId,
-                startDate: input.startDate,
-                preserveCurrentPrice: input.preserveCurrentPrice
-            )
-        }
+        // One PATCH with every price inlined — a single request instead of one POST per
+        // territory, and Apple applies it all-or-nothing.
+        let localIds = prices.indices.map { "${price-\($0)}" }
+        let body = SubscriptionUpdateRequest(
+            data: .init(
+                type: .subscriptions,
+                id: subscriptionId,
+                relationships: .init(prices: .init(data: localIds.map { .init(type: .subscriptionPrices, id: $0) }))
+            ),
+            included: zip(localIds, prices).map { localId, input in
+                .subscriptionPriceInlineCreate(SubscriptionPriceInlineCreate(
+                    type: .subscriptionPrices,
+                    id: localId,
+                    attributes: .init(startDate: input.startDate, isPreserveCurrentPrice: input.preserveCurrentPrice),
+                    relationships: .init(
+                        territory: .init(data: .init(type: .territories, id: input.territory)),
+                        subscriptionPricePoint: .init(data: .init(type: .subscriptionPricePoints, id: input.pricePointId))
+                    )
+                ))
+            }
+        )
+        _ = try await client.request(APIEndpoint.v1.subscriptions.id(subscriptionId).patch(body))
         // Re-read the schedule so the caller gets the post-write state.
         return try await getPriceSchedule(subscriptionId: subscriptionId)
             ?? Domain.SubscriptionPriceSchedule(id: subscriptionId, subscriptionId: subscriptionId)
@@ -91,22 +101,32 @@ public struct SDKSubscriptionPriceRepository: SubscriptionPriceRepository, @unch
     }
 
     public func getPriceSchedule(subscriptionId: String) async throws -> Domain.SubscriptionPriceSchedule? {
-        // Step 1: GET /v1/subscriptions/{id}/prices?include=territory,subscriptionPricePoint
-        let pricesResponse = try await client.request(
-            APIEndpoint.v1.subscriptions.id(subscriptionId).prices.get(parameters: .init(
+        // Step 1: GET /v1/subscriptions/{id}/prices?include=territory,subscriptionPricePoint,
+        // following every page — a subscription can have a manual price in all 175 territories.
+        var pricesData: [AppStoreConnect_Swift_SDK.SubscriptionPrice] = []
+        var pricesIncluded: [SubscriptionPricesResponse.IncludedItem] = []
+        var cursor: String?
+        repeat {
+            var request = APIEndpoint.v1.subscriptions.id(subscriptionId).prices.get(parameters: .init(
                 fieldsSubscriptionPrices: [.territory, .subscriptionPricePoint],
                 fieldsTerritories: [.currency],
                 fieldsSubscriptionPricePoints: [.customerPrice, .proceeds, .proceedsYear2, .territory],
+                limit: 200,
                 include: [.territory, .subscriptionPricePoint]
             ))
-        )
+            if let cursor { request.query = (request.query ?? []) + [("cursor", cursor)] }
+            let page = try await client.request(request)
+            pricesData += page.data
+            pricesIncluded += page.included ?? []
+            cursor = page.meta?.paging.nextCursor
+        } while cursor != nil
 
         // No prices set → no schedule yet.
-        guard !pricesResponse.data.isEmpty else { return nil }
+        guard !pricesData.isEmpty else { return nil }
 
         var territoriesById: [String: Domain.Territory] = [:]
         var pricePointsById: [String: AppStoreConnect_Swift_SDK.SubscriptionPricePoint] = [:]
-        for item in pricesResponse.included ?? [] {
+        for item in pricesIncluded {
             switch item {
             case .territory(let t):
                 territoriesById[t.id] = Domain.Territory(id: t.id, currency: t.attributes?.currency)
@@ -115,7 +135,7 @@ public struct SDKSubscriptionPriceRepository: SubscriptionPriceRepository, @unch
             }
         }
 
-        let manualPrices: [Domain.TerritoryPrice] = pricesResponse.data.compactMap { price in
+        let manualPrices: [Domain.TerritoryPrice] = pricesData.compactMap { price in
             guard
                 let territoryId = price.relationships?.territory?.data?.id,
                 let territory = territoriesById[territoryId],
@@ -128,7 +148,7 @@ public struct SDKSubscriptionPriceRepository: SubscriptionPriceRepository, @unch
         }
 
         // Step 2: equalize using the first manual price's price point.
-        let firstPricePointId = pricesResponse.data.first?.relationships?.subscriptionPricePoint?.data?.id
+        let firstPricePointId = pricesData.first?.relationships?.subscriptionPricePoint?.data?.id
         var equalized: [Domain.TerritoryPrice] = []
         if let pricePointId = firstPricePointId {
             equalized = (try? await fetchEqualizedTerritoryPrices(pricePointId: pricePointId)) ?? []

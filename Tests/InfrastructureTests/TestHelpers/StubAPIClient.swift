@@ -18,16 +18,40 @@ final class StubAPIClient: APIClient, @unchecked Sendable {
     private(set) var voidRequestCalled = false
     private(set) var lastQuery: [(String, String?)]?
     private(set) var lastPath: String?
+    /// Every request sent, in order — lets multi-call adapters assert what went over the wire.
+    private(set) var requests: [RecordedRequest] = []
+    /// Queued responses served one per call before falling back to `stubsByType` (pagination).
+    private var pagesByType: [String: [Any]] = [:]
+
+    struct RecordedRequest {
+        let method: String
+        let path: String
+        let query: [(String, String?)]?
+        /// JSON-encoded request body, `nil` for body-less requests.
+        let body: String?
+    }
 
     func willReturn<T>(_ response: T) {
         stubsByType[String(describing: T.self)] = response
         lastStub = response
     }
 
+    /// Serves `pages` in order for successive requests returning `T`.
+    func willReturnPages<T>(_ pages: [T]) {
+        pagesByType[String(describing: T.self), default: []].append(contentsOf: pages.map { $0 as Any })
+    }
+
     func request<T: Decodable>(_ endpoint: Request<T>) async throws -> T {
         lastQuery = endpoint.query
         lastPath = endpoint.path
+        requests.append(RecordedRequest(
+            method: endpoint.method, path: endpoint.path, query: endpoint.query, body: Self.encodedBody(of: endpoint)
+        ))
         let key = String(describing: T.self)
+        if var pages = pagesByType[key], !pages.isEmpty, let page = pages.removeFirst() as? T {
+            pagesByType[key] = pages
+            return page
+        }
         if let response = stubsByType[key] as? T { return response }
         if let response = lastStub as? T { return response }
         // Throw rather than fatalError so adapters can simulate ASC 404 by simply not stubbing.
@@ -36,5 +60,15 @@ final class StubAPIClient: APIClient, @unchecked Sendable {
 
     func request(_ endpoint: Request<Void>) async throws {
         voidRequestCalled = true
+    }
+
+    /// `Request.body` is internal to the SDK, so read it reflectively and JSON-encode it.
+    private static func encodedBody<T>(of endpoint: Request<T>) -> String? {
+        guard let optional = Mirror(reflecting: endpoint).children.first(where: { $0.label == "body" })?.value,
+              let body = Mirror(reflecting: optional).children.first?.value as? any Encodable
+        else { return nil }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return (try? encoder.encode(body)).flatMap { String(data: $0, encoding: .utf8) }
     }
 }
