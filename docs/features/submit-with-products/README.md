@@ -89,7 +89,7 @@ What each common refusal needs, and whether `asc` can fix it:
 | Reason | Fix |
 |--------|-----|
 | `contentRightsDeclaration` required | `asc apps update --app-id <id> --content-rights-declaration DOES_NOT_USE_THIRD_PARTY_CONTENT` (or `USES_THIRD_PARTY_CONTENT`) |
-| Pricing not set | `asc apps price-points list --app-id <id>` then `asc apps prices set --app-id <id> --base-territory USA --price-point-id <id>` (the `0.0` point makes it free) — see [app-pricing.md](app-pricing.md) |
+| Pricing not set | `asc apps price-points list --app-id <id>` then `asc apps prices set --app-id <id> --base-territory USA --price-point-id <id>` (the `0.0` point makes it free) — see [app-pricing.md](../app-pricing/README.md) |
 | App Privacy data usages not published | **No public API.** App Privacy answers exist only behind the App Store Connect web session (the `/v1/appDataUsages` path in the error isn't reachable with an API key) — publish them in App Store Connect (App Privacy) |
 | Required screenshot (e.g. `APP_IPAD_PRO_3GEN_129`) missing | `asc screenshot-sets` / `asc screenshots` for that display type |
 

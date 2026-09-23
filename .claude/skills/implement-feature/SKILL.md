@@ -354,7 +354,7 @@ Structure:
 8. **Testing** — one representative test snippet + `swift test` command
 9. **Extending** — natural next steps with stub code
 
-Use `docs/features/screenshots.md` as the canonical reference example.
+Use `docs/features/screenshots/README.md` as the canonical reference example.
 
 ---
 

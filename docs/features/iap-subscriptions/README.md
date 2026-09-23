@@ -8,13 +8,13 @@ Every command also serves as a REST endpoint when running `asc web-server`. Affo
 
 | Document | Covers |
 |----------|--------|
-| [lifecycle.md](iap-subscriptions/lifecycle.md) | IAP & Subscription `update` / `delete` / `unsubmit` plus subscription-group / introductory-offer lifecycle. |
-| [pricing.md](iap-subscriptions/pricing.md) | IAP base-territory pricing and subscription per-territory pricing (incl. `proceedsYear2`). |
-| [offer-codes.md](iap-subscriptions/offer-codes.md) | IAP & subscription offer codes — 3-level hierarchy plus per-territory price listing and one-time-code redemption value fetch. |
-| [group-localizations.md](iap-subscriptions/group-localizations.md) | Per-locale display name and Custom App Name for subscription groups. |
-| [promotional-offers.md](iap-subscriptions/promotional-offers.md) | Subscription promotional offers with per-territory inline pricing. |
-| [win-back-offers.md](iap-subscriptions/win-back-offers.md) | Win-back offers with eligibility rules, priority, promotion intent, and per-territory pricing. |
-| [review-assets.md](iap-subscriptions/review-assets.md) | IAP review screenshots & 1024×1024 promotional images, subscription review screenshots — reserve→upload→commit-with-MD5. |
+| [lifecycle.md](lifecycle.md) | IAP & Subscription `update` / `delete` / `unsubmit` plus subscription-group / introductory-offer lifecycle. |
+| [pricing.md](pricing.md) | IAP base-territory pricing and subscription per-territory pricing (incl. `proceedsYear2`). |
+| [offer-codes.md](offer-codes.md) | IAP & subscription offer codes — 3-level hierarchy plus per-territory price listing and one-time-code redemption value fetch. |
+| [group-localizations.md](group-localizations.md) | Per-locale display name and Custom App Name for subscription groups. |
+| [promotional-offers.md](promotional-offers.md) | Subscription promotional offers with per-territory inline pricing. |
+| [win-back-offers.md](win-back-offers.md) | Win-back offers with eligibility rules, priority, promotion intent, and per-territory pricing. |
+| [review-assets.md](review-assets.md) | IAP review screenshots & 1024×1024 promotional images, subscription review screenshots — reserve→upload→commit-with-MD5. |
 
 ## REST navigation (`_links`)
 
@@ -40,8 +40,8 @@ The same shape applies to subscriptions under `/api/v1/subscriptions/{id}/…` (
 
 Related top-level features:
 
-- [promoted-purchases.md](promoted-purchases.md) — App Store product page promoted slots.
-- [iap-subscription-availability.md](iap-subscription-availability.md) — territory availability for apps, IAPs, and subscriptions.
+- [promoted-purchases.md](../promoted-purchases/README.md) — App Store product page promoted slots.
+- [iap-subscription-availability.md](../iap-subscription-availability/README.md) — territory availability for apps, IAPs, and subscriptions.
 
 ## Architecture
 

@@ -4,7 +4,7 @@
 
 The ASC web server (`asc web-server`) is a Swift HTTP/WebSocket server built on [Hummingbird 2.21.1](https://github.com/hummingbird-project/hummingbird). It serves as the API bridge between the browser UI (hosted on `asccli.app`) and the CLI. Single binary, zero external dependencies.
 
-Plugins extend the server with additional routes, commands, and affordances. See [Plugin Architecture](plugins.md).
+Plugins extend the server with additional routes, commands, and affordances. See [Plugin Architecture](../plugins/README.md).
 
 ## Architecture
 

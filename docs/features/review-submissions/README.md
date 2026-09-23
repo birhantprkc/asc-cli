@@ -2,7 +2,7 @@
 
 Inspect App Store review submissions: state, rejected items, and per-item drill-in affordances. A *review submission* is the top-level record Apple's review queue operates on; it packages one or more `ReviewSubmissionItem`s, each pointing at a reviewable resource — an `AppStoreVersion`, or a version of an in-app purchase, subscription or subscription group.
 
-Building and sending a submission (`review-submissions create`, `items add`, `items remove`, `submit`) and `versions submit --with-products` are documented in [submit-with-products.md](submit-with-products.md).
+Building and sending a submission (`review-submissions create`, `items add`, `items remove`, `submit`) and `versions submit --with-products` are documented in [submit-with-products.md](../submit-with-products/README.md).
 
 When a submission's state is `UNRESOLVED_ISSUES`, the per-item state pinpoints *which* attached resource Apple rejected. The reviewer's free-text reasoning is **not exposed via the public ASC API** — it lives only in the App Store Connect Resolution Center web UI. The CLI surfaces the state machine, not the narrative.
 
@@ -108,7 +108,7 @@ asc review-submissions items list --submission-id sub-1 --state REJECTED --prett
 | `GET` | `/api/v1/apps/{appId}/review-submissions` | `--state` → `?state=`, `--limit` → `?limit=` | List submissions for an app |
 | `GET` | `/api/v1/review-submissions/{id}` | — | Get a single submission |
 | `GET` | `/api/v1/review-submissions/{id}/items` | `--state` → `?state=` | List items in a submission (optionally filtered) |
-| `POST` | `/api/v1/apps/{appId}/review-submissions` | `--platform` → body `platform` | Open (or reuse) a draft — see [submit-with-products.md](submit-with-products.md) |
+| `POST` | `/api/v1/apps/{appId}/review-submissions` | `--platform` → body `platform` | Open (or reuse) a draft — see [submit-with-products.md](../submit-with-products/README.md) |
 | `POST` | `/api/v1/review-submissions/{id}/items` | version flag → body key | Add an item |
 | `DELETE` | `/api/v1/review-submissions/items/{itemId}` | — | Remove an item |
 | `POST` | `/api/v1/review-submissions/{id}/submit` | — | Submit the draft |

@@ -2,7 +2,7 @@
 
 Manage local iOS simulators from the CLI — list, boot, and shutdown.
 
-Streaming and interaction features are available via the [ASC Pro plugin](plugins.md).
+Streaming and interaction features are available via the [ASC Pro plugin](../plugins/README.md).
 
 ## CLI Usage
 
@@ -123,7 +123,7 @@ asc simulators shutdown --udid CF65871E-B600-40CB-8B18-B6B7101D38E1
 ```
 
 Streaming, interaction, and device bezels are provided by the ASC Pro plugin.
-See [Plugin Architecture](plugins.md) for details.
+See [Plugin Architecture](../plugins/README.md) for details.
 
 ---
 

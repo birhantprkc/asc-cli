@@ -2,7 +2,7 @@
 
 ASC supports a plugin system based on compiled `.plugin` bundles (dylibs) that extend the CLI with server routes, UI components, CLI commands, and domain affordances. Plugins are discovered from `~/.asc/plugins/` at startup.
 
-For browsing and installing plugins from a marketplace, see [Plugin Market](market.md).
+For browsing and installing plugins from a marketplace, see [Plugin Market](../market/README.md).
 
 ## Plugin Bundle Structure
 
@@ -53,11 +53,11 @@ asc plugins uninstall --name ASCPro
 
 ### `asc plugins market list`
 
-Browse all available plugins. See [Plugin Market](market.md).
+Browse all available plugins. See [Plugin Market](../market/README.md).
 
 ### `asc plugins market search --query <text>`
 
-Search marketplace by keyword. See [Plugin Market](market.md).
+Search marketplace by keyword. See [Plugin Market](../market/README.md).
 
 ### `asc plugins updates`
 

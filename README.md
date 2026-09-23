@@ -25,7 +25,7 @@ asc apps list          # find your app ID
 asc init --app-id <id> # pin it — skip --app-id on every future command
 ```
 
-Multiple accounts, environment variables for CI: [auth](docs/features/asc-auth.md). Building from source: [CONTRIBUTING.md](CONTRIBUTING.md).
+Multiple accounts, environment variables for CI: [auth](docs/features/asc-auth/README.md). Building from source: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Built for Agents: CAEOAS
 
@@ -52,22 +52,22 @@ JSON is the default; add `--output table` or `--output markdown` for people, or 
 
 | Area | What you can do |
 | --- | --- |
-| **Apps & Versions** | Set the app's price or make it free, create versions, link builds, pre-flight checks, submit for review — with first-time IAPs and subscriptions in the same submission → [pricing](docs/features/app-pricing.md) · [readiness](docs/features/version-check-readiness.md) · [submit with products](docs/features/submit-with-products.md) · [review submissions](docs/features/review-submissions.md) |
-| **Builds** | Archive Xcode projects, export IPA/PKG, upload, set encryption compliance → [archive](docs/features/builds-archive.md) · [upload](docs/features/builds-upload.md) |
-| **TestFlight** | Beta groups, testers (CSV import/export), beta review, per-locale beta app description → [testflight](docs/features/testflight.md) · [beta review](docs/features/beta-review.md) · [beta localizations](docs/features/beta-app-localizations.md) |
-| **Metadata** | What's New, description, keywords; name, subtitle, privacy policy; categories; age rating; review contact → [version localizations](docs/features/version-localizations.md) · [app info](docs/features/app-infos.md) · [age rating](docs/features/age-rating.md) · [review detail](docs/features/version-review-detail.md) |
-| **Screenshots & Previews** | Screenshot sets and uploads, video previews → [screenshots](docs/features/screenshots.md) · [previews](docs/features/app-previews.md) |
-| **App Shots** | AI screenshot generation: templates, gallery sets, plugin themes, Gemini enhancement → [app shots](docs/features/app-shots.md) · [themes](docs/features/app-shots-themes.md) |
-| **Monetization** | IAPs, subscriptions, intro/promotional/win-back offers, offer codes, per-territory pricing, promoted purchases, availability → [IAP & subscriptions](docs/features/iap-subscriptions.md) · [promoted purchases](docs/features/promoted-purchases.md) · [availability](docs/features/iap-subscription-availability.md) |
-| **Product Page Optimization** | A/B test your product page with alternate icons → [experiments](docs/features/product-page-optimization.md) |
-| **Code Signing** | Bundle IDs, certificates, devices, provisioning profiles → [code signing](docs/features/code-signing.md) |
-| **Customer Reviews** | Read reviews and respond → [reviews](docs/features/customer-reviews.md) |
-| **Team** | Members, roles, invitations → [users](docs/features/asc-users.md) |
-| **Xcode Cloud** | Products, workflows, start and inspect builds → [xcode cloud](docs/features/xcode-cloud.md) |
-| **Insights** | Sales, finance and analytics reports; performance metrics and diagnostics → [reports](docs/features/reports.md) · [performance](docs/features/performance.md) |
-| **App Clips & Game Center** | App Clip experiences; achievements and leaderboards → [app clips](docs/features/app-clips.md) · [game center](docs/features/game-center.md) |
-| **Iris (private API)** | Web-UI features with no public API: create apps, read App Review's rejection messages → [iris](docs/features/iris/iris.md) · [resolution center](docs/features/resolution-center.md) |
-| **Extend** | Plugins, skills, local simulators, REST server → [plugins](docs/features/plugins.md) · [skills](docs/features/skills.md) · [simulators](docs/features/simulators.md) · [REST API](docs/features/rest-api.md) |
+| **Apps & Versions** | Set the app's price or make it free, create versions, link builds, pre-flight checks, submit for review — with first-time IAPs and subscriptions in the same submission → [pricing](docs/features/app-pricing/README.md) · [readiness](docs/features/version-check-readiness/README.md) · [submit with products](docs/features/submit-with-products/README.md) · [review submissions](docs/features/review-submissions/README.md) |
+| **Builds** | Archive Xcode projects, export IPA/PKG, upload, set encryption compliance → [archive](docs/features/builds-archive/README.md) · [upload](docs/features/builds-upload/README.md) |
+| **TestFlight** | Beta groups, testers (CSV import/export), beta review, per-locale beta app description → [testflight](docs/features/testflight/README.md) · [beta review](docs/features/beta-review/README.md) · [beta localizations](docs/features/beta-app-localizations/README.md) |
+| **Metadata** | What's New, description, keywords; name, subtitle, privacy policy; categories; age rating; review contact → [version localizations](docs/features/version-localizations/README.md) · [app info](docs/features/app-infos/README.md) · [age rating](docs/features/age-rating/README.md) · [review detail](docs/features/version-review-detail/README.md) |
+| **Screenshots & Previews** | Screenshot sets and uploads, video previews → [screenshots](docs/features/screenshots/README.md) · [previews](docs/features/app-previews/README.md) |
+| **App Shots** | AI screenshot generation: templates, gallery sets, plugin themes, Gemini enhancement → [app shots](docs/features/app-shots/README.md) · [themes](docs/features/app-shots-themes/README.md) |
+| **Monetization** | IAPs, subscriptions, intro/promotional/win-back offers, offer codes, per-territory pricing, promoted purchases, availability → [IAP & subscriptions](docs/features/iap-subscriptions/README.md) · [promoted purchases](docs/features/promoted-purchases/README.md) · [availability](docs/features/iap-subscription-availability/README.md) |
+| **Product Page Optimization** | A/B test your product page with alternate icons → [experiments](docs/features/product-page-optimization/README.md) |
+| **Code Signing** | Bundle IDs, certificates, devices, provisioning profiles → [code signing](docs/features/code-signing/README.md) |
+| **Customer Reviews** | Read reviews and respond → [reviews](docs/features/customer-reviews/README.md) |
+| **Team** | Members, roles, invitations → [users](docs/features/asc-users/README.md) |
+| **Xcode Cloud** | Products, workflows, start and inspect builds → [xcode cloud](docs/features/xcode-cloud/README.md) |
+| **Insights** | Sales, finance and analytics reports; performance metrics and diagnostics → [reports](docs/features/reports/README.md) · [performance](docs/features/performance/README.md) |
+| **App Clips & Game Center** | App Clip experiences; achievements and leaderboards → [app clips](docs/features/app-clips/README.md) · [game center](docs/features/game-center/README.md) |
+| **Iris (private API)** | Web-UI features with no public API: create apps, read App Review's rejection messages → [iris](docs/features/iris/README.md) · [resolution center](docs/features/resolution-center/README.md) |
+| **Extend** | Plugins, skills, local simulators, REST server → [plugins](docs/features/plugins/README.md) · [skills](docs/features/skills/README.md) · [simulators](docs/features/simulators/README.md) · [REST API](docs/features/rest-api/README.md) |
 
 Every feature, one line each: [docs index](docs/README.md). Every command and flag: [command reference](docs/commands.md) or `asc <command> --help`.
 
@@ -90,7 +90,7 @@ Apps that use and support asc-cli development:
 
 ## App Wall
 
-Apps built and published using asc-cli. To add yours, edit [`homepage/apps.json`](homepage/apps.json) and open a pull request — see [docs/features/app-wall.md](docs/features/app-wall.md) for the format. View the live wall at [asccli.app/#app-wall](https://asccli.app/#app-wall).
+Apps built and published using asc-cli. To add yours, edit [`homepage/apps.json`](homepage/apps.json) and open a pull request — see [docs/features/app-wall/README.md](docs/features/app-wall/README.md) for the format. View the live wall at [asccli.app/#app-wall](https://asccli.app/#app-wall).
 
 ## License
 
