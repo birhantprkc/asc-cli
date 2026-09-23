@@ -158,9 +158,10 @@ public struct SDKWinBackOfferRepository: WinBackOfferRepository, @unchecked Send
     }
 
     public func listPrices(offerId: String) async throws -> [Domain.WinBackOfferPrice] {
-        // One price per territory — follow every page to get all 175.
+        // One price per territory — follow every page to get all 175. `include` makes Apple
+        // return each price's territory and price point linkage, which the mapper reads.
         let pages = try await client.requestAllPages(
-            APIEndpoint.v1.winBackOffers.id(offerId).prices.get(parameters: .init(limit: 200)),
+            APIEndpoint.v1.winBackOffers.id(offerId).prices.get(parameters: .init(limit: 200, include: [.territory, .subscriptionPricePoint])),
             nextCursor: { $0.meta?.paging.nextCursor }
         )
         return pages.flatMap(\.data).map { mapPrice($0, offerId: offerId) }
