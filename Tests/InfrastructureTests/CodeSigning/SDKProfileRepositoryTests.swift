@@ -95,4 +95,16 @@ struct SDKProfileRepositoryTests {
         #expect(result.count == 75)
         #expect(result.last?.id == "item-74")
     }
+
+    @Test func `profiles list asks Apple for each profile's bundle id`() async throws {
+        // Apple only links a profile to its bundle ID when asked via `include`.
+        let stub = StubAPIClient()
+        stub.willReturn(ProfilesResponse(data: [], links: .init(this: "")))
+
+        let repo = SDKProfileRepository(client: stub)
+        _ = try await repo.listProfiles(bundleIdId: nil, profileType: nil)
+
+        let query = Dictionary(uniqueKeysWithValues: (stub.lastQuery ?? []).map { ($0.0, $0.1 ?? "") })
+        #expect(query["include"] == "bundleId")
+    }
 }

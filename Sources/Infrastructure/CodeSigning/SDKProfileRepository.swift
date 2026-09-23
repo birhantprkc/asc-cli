@@ -21,9 +21,11 @@ public struct SDKProfileRepository: ProfileRepository, @unchecked Sendable {
                 APIEndpoint.V1.Profiles.GetParameters.FilterProfileType(rawValue: $0.rawValue)
             }
             let pages = try await client.requestAllPages(
+                // `include` makes Apple return each profile's bundle ID linkage.
                 APIEndpoint.v1.profiles.get(parameters: .init(
                     filterProfileType: filterType.map { [$0] },
-                    limit: 200
+                    limit: 200,
+                    include: [.bundleID]
                 )),
                 nextCursor: { $0.meta?.paging.nextCursor }
             )
