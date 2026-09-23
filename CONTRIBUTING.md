@@ -39,7 +39,7 @@ Docs follow [docs/documentation-design](docs/documentation-design/README.md). In
 
 | Change | Update |
 |---|---|
-| New feature | `docs/features/<x>.md` with a `description`, one CHANGELOG line, `make docs` |
+| New feature | `docs/features/<x>/README.md` with a `description`, one CHANGELOG line, `make docs` |
 | New or changed flag | Nothing by hand; `make docs` regenerates [docs/commands.md](docs/commands.md) |
 | Improvement | The affected feature doc section, one CHANGELOG line |
 | Bug fix | One CHANGELOG line |
