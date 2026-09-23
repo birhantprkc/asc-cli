@@ -23,6 +23,8 @@ extension SubscriptionGroup: Presentable {
 extension SubscriptionGroup: AffordanceProviding {
     public var structuredAffordances: [Affordance] {
         [
+            Affordance(key: "listVersions", command: "subscription-groups versions", action: "list",
+                       params: ["group-id": id]),
             Affordance(key: "createLocalization", command: "subscription-group-localizations", action: "create",
                        params: ["group-id": id, "locale": "en-US", "name": "<name>"]),
             Affordance(key: "createSubscription", command: "subscriptions", action: "create",

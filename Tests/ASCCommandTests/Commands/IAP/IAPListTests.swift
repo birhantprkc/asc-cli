@@ -38,6 +38,7 @@ struct IAPListTests {
                 "listLocalizations" : "asc iap-localizations list --iap-id iap-1",
                 "listOfferCodes" : "asc iap-offer-codes list --iap-id iap-1",
                 "listPricePoints" : "asc iap price-points list --iap-id iap-1",
+                "listVersions" : "asc iap versions list --iap-id iap-1",
                 "setPrice" : "asc iap prices set --base-territory <territory> --iap-id iap-1 --price-point-id <price-point-id>",
                 "update" : "asc iap update --iap-id iap-1 --reference-name <name>",
                 "uploadImage" : "asc iap-images upload --file <path> --iap-id iap-1",

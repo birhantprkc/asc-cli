@@ -59,6 +59,9 @@ enum RESTRoutes {
         if let promotedRepo = try? factory.makePromotedPurchaseRepository(authProvider: auth) {
             PromotedPurchasesController(repo: promotedRepo).addRoutes(to: v1)
         }
+        if let productVersionRepo = try? factory.makeProductVersionRepository(authProvider: auth) {
+            ProductVersionsController(repo: productVersionRepo).addRoutes(to: v1)
+        }
         if let experimentRepo = try? factory.makeExperimentRepository(authProvider: auth) {
             ExperimentsController(repo: experimentRepo).addRoutes(to: v1)
         }

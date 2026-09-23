@@ -266,4 +266,16 @@ struct SubscriptionTests {
         #expect(ready.apiLinks["submit"]?.method == "POST")
         #expect(missing.apiLinks["submit"] == nil)
     }
+
+    @Test func `a subscription points at its review versions`() {
+        let subscription = MockRepositoryFactory.makeSubscription(id: "sub-1")
+        #expect(subscription.affordances["listVersions"] == "asc subscriptions versions list --subscription-id sub-1")
+        #expect(subscription.apiLinks["listVersions"]?.href == "/api/v1/subscriptions/sub-1/versions")
+    }
+
+    @Test func `a subscription group points at its review versions`() {
+        let group = MockRepositoryFactory.makeSubscriptionGroup(id: "grp-1")
+        #expect(group.affordances["listVersions"] == "asc subscription-groups versions list --group-id grp-1")
+        #expect(group.apiLinks["listVersions"]?.href == "/api/v1/subscription-groups/grp-1/versions")
+    }
 }

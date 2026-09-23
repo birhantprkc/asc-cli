@@ -13,6 +13,7 @@ struct IAPCommand: AsyncParsableCommand {
             IAPUnsubmit.self,
             IAPPricePointsCommand.self,
             IAPPricesCommand.self,
+            IAPVersionsCommand.self,
         ]
     )
 }

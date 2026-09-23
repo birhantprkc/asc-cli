@@ -1151,4 +1151,30 @@ struct RESTRoutesTests {
 
         #expect(normalized.contains("/api/v1/apps/42/experiments"))
     }
+
+    // MARK: - Product versions
+
+    @Test func `product version lists return REST links to siblings and to add to a submission`() async throws {
+        let mockRepo = MockProductVersionRepository()
+        given(mockRepo).listInAppPurchaseVersions(iapId: .any).willReturn([
+            ProductVersion(id: "iv-1", productId: "iap-1", kind: .inAppPurchase, version: 1, state: .prepareForSubmission),
+        ])
+        given(mockRepo).listSubscriptionVersions(subscriptionId: .any).willReturn([
+            ProductVersion(id: "sv-1", productId: "sub-1", kind: .subscription, version: 1, state: .prepareForSubmission),
+        ])
+        given(mockRepo).listSubscriptionGroupVersions(groupId: .any).willReturn([
+            ProductVersion(id: "gv-1", productId: "grp-1", kind: .subscriptionGroup, version: 1, state: .prepareForSubmission),
+        ])
+
+        let iap = try await IAPVersionsList.parse(["--iap-id", "iap-1"]).execute(repo: mockRepo, affordanceMode: .rest)
+        let sub = try await SubscriptionVersionsList.parse(["--subscription-id", "sub-1"]).execute(repo: mockRepo, affordanceMode: .rest)
+        let group = try await SubscriptionGroupVersionsList.parse(["--group-id", "grp-1"]).execute(repo: mockRepo, affordanceMode: .rest)
+        let all = [iap, sub, group].map { $0.replacingOccurrences(of: "\\/", with: "/") }
+
+        #expect(all.allSatisfy { $0.contains("\"_links\"") })
+        #expect(all[0].contains("/api/v1/iap/iap-1/versions"))
+        #expect(all[1].contains("/api/v1/subscriptions/sub-1/versions"))
+        #expect(all[2].contains("/api/v1/subscription-groups/grp-1/versions"))
+        #expect(all.allSatisfy { $0.contains("/api/v1/review-submissions/<submission-id>/items") })
+    }
 }

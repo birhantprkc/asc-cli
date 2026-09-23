@@ -65,7 +65,9 @@ public final class RESTPathResolver: @unchecked Sendable {
 
         let base = "/api/v1"
 
-        if action != "list", action != "create" {
+        // `add` attaches an existing resource to a parent's collection (e.g. an item to a
+        // review submission), so it resolves like `create`: POST to the collection.
+        if action != "list", action != "create", action != "add" {
             // Action on this resource by its own id (e.g. `versions get --version-id v-1`).
             if let ownId = params["\(singularize(command))-id"] {
                 return resourcePath(base: base, segment: command, id: ownId, action: action)
@@ -90,7 +92,7 @@ public final class RESTPathResolver: @unchecked Sendable {
             }
         }
 
-        // List/create under a parent resource.
+        // List/create/add under a parent resource.
         if let route = currentRoutes[command],
            let parentId = params[route.parentParam] {
             return "\(base)/\(route.parentSegment)/\(parentId)/\(route.segment)"
@@ -162,6 +164,7 @@ public final class RESTPathResolver: @unchecked Sendable {
         _ = _codeSigningRoutes
         _ = _appShotsRoutes
         _ = _submissionRoutes
+        _ = _productVersionRoutes
         _ = _resolutionCenterRoutes
         _ = _experimentRoutes
 
