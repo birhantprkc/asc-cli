@@ -103,23 +103,18 @@ public struct SDKSubscriptionPriceRepository: SubscriptionPriceRepository, @unch
     public func getPriceSchedule(subscriptionId: String) async throws -> Domain.SubscriptionPriceSchedule? {
         // Step 1: GET /v1/subscriptions/{id}/prices?include=territory,subscriptionPricePoint,
         // following every page — a subscription can have a manual price in all 175 territories.
-        var pricesData: [AppStoreConnect_Swift_SDK.SubscriptionPrice] = []
-        var pricesIncluded: [SubscriptionPricesResponse.IncludedItem] = []
-        var cursor: String?
-        repeat {
-            var request = APIEndpoint.v1.subscriptions.id(subscriptionId).prices.get(parameters: .init(
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.subscriptions.id(subscriptionId).prices.get(parameters: .init(
                 fieldsSubscriptionPrices: [.territory, .subscriptionPricePoint],
                 fieldsTerritories: [.currency],
                 fieldsSubscriptionPricePoints: [.customerPrice, .proceeds, .proceedsYear2, .territory],
                 limit: 200,
                 include: [.territory, .subscriptionPricePoint]
-            ))
-            if let cursor { request.query = (request.query ?? []) + [("cursor", cursor)] }
-            let page = try await client.request(request)
-            pricesData += page.data
-            pricesIncluded += page.included ?? []
-            cursor = page.meta?.paging.nextCursor
-        } while cursor != nil
+            )),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        let pricesData = pages.flatMap(\.data)
+        let pricesIncluded = pages.flatMap { $0.included ?? [] }
 
         // No prices set → no schedule yet.
         guard !pricesData.isEmpty else { return nil }

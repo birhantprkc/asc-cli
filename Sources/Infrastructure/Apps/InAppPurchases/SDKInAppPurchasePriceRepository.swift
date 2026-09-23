@@ -30,19 +30,23 @@ public struct SDKInAppPurchasePriceRepository: InAppPurchasePriceRepository, @un
         }
 
         // Step 2: manual prices with territory + price point includes.
-        let manualResponse = try await client.request(
+        // Follow every page — manual prices can cover all 175 territories.
+        let manualPages = try await client.requestAllPages(
             APIEndpoint.v1.inAppPurchasePriceSchedules.id(scheduleId).manualPrices.get(parameters: .init(
                 fieldsInAppPurchasePrices: [.inAppPurchasePricePoint, .territory],
                 fieldsInAppPurchasePricePoints: [.customerPrice, .proceeds, .territory],
                 fieldsTerritories: [.currency],
+                limit: 200,
                 include: [.inAppPurchasePricePoint, .territory]
-            ))
+            )),
+            nextCursor: { $0.meta?.paging.nextCursor }
         )
+        let manualData = manualPages.flatMap(\.data)
 
         // Index included territories + price points for lookup.
         var territoriesById: [String: Domain.Territory] = [:]
         var pricePointsById: [String: AppStoreConnect_Swift_SDK.InAppPurchasePricePoint] = [:]
-        for item in manualResponse.included ?? [] {
+        for item in manualPages.flatMap({ $0.included ?? [] }) {
             switch item {
             case .territory(let t):
                 territoriesById[t.id] = Domain.Territory(id: t.id, currency: t.attributes?.currency)
@@ -51,7 +55,7 @@ public struct SDKInAppPurchasePriceRepository: InAppPurchasePriceRepository, @un
             }
         }
 
-        let manualPrices: [Domain.TerritoryPrice] = manualResponse.data.compactMap { price in
+        let manualPrices: [Domain.TerritoryPrice] = manualData.compactMap { price in
             guard
                 let territoryId = price.relationships?.territory?.data?.id,
                 let territory = territoriesById[territoryId],
@@ -65,7 +69,7 @@ public struct SDKInAppPurchasePriceRepository: InAppPurchasePriceRepository, @un
 
         // Step 3: equalizations — fetch the full ~175-territory list using the manual price's
         // price point. If there are no manual prices we have nothing to equalize from.
-        let manualPricePointId = manualResponse.data.first?.relationships?.inAppPurchasePricePoint?.data?.id
+        let manualPricePointId = manualData.first?.relationships?.inAppPurchasePricePoint?.data?.id
         var equalizedPrices: [Domain.TerritoryPrice] = []
         if let pricePointId = manualPricePointId {
             equalizedPrices = (try? await fetchEqualizedTerritoryPrices(pricePointId: pricePointId)) ?? []

@@ -283,4 +283,46 @@ struct SDKInAppPurchasePriceRepositoryTests {
         #expect(byTerritory["JPN"]?.customerPrice == "1500")
         #expect(byTerritory["JPN"]?.territory.currency == "JPY")
     }
+
+    @Test func `price schedule includes every manually priced territory beyond the first page`() async throws {
+        func manualPricesPage(_ range: Range<Int>, nextCursor: String?) -> InAppPurchasePricesResponse {
+            InAppPurchasePricesResponse(
+                data: range.map { i in
+                    AppStoreConnect_Swift_SDK.InAppPurchasePrice(
+                        type: .inAppPurchasePrices, id: "price-\(i)",
+                        relationships: .init(
+                            inAppPurchasePricePoint: .init(data: .init(type: .inAppPurchasePricePoints, id: "pp-\(i)")),
+                            territory: .init(data: .init(type: .territories, id: "T\(i)"))
+                        )
+                    )
+                },
+                included: range.flatMap { i -> [InAppPurchasePricesResponse.IncludedItem] in [
+                    .territory(Territory(type: .territories, id: "T\(i)", attributes: .init(currency: "USD"))),
+                    .inAppPurchasePricePoint(InAppPurchasePricePoint(
+                        type: .inAppPurchasePricePoints, id: "pp-\(i)",
+                        attributes: .init(customerPrice: "\(i).99", proceeds: "\(i).50")
+                    )),
+                ] },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 175, limit: 200, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturn(InAppPurchasePriceScheduleResponse(
+            data: AppStoreConnect_Swift_SDK.InAppPurchasePriceSchedule(type: .inAppPurchasePriceSchedules, id: "iap-7"),
+            links: .init(this: "")
+        ))
+        stub.willReturnPages([
+            manualPricesPage(0..<100, nextCursor: "page-2"),
+            manualPricesPage(100..<175, nextCursor: nil),
+        ])
+        stub.willReturn(InAppPurchasePricePointsResponse(data: [], links: .init(this: "")))
+
+        let repo = SDKInAppPurchasePriceRepository(client: stub)
+        let result = try await repo.getPriceSchedule(iapId: "iap-7")
+
+        let prices = result?.territoryPrices ?? []
+        #expect(prices.count == 175)
+        #expect(prices.first { $0.territory.id == "T174" }?.customerPrice == "174.99")
+    }
 }

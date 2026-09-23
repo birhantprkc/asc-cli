@@ -106,4 +106,31 @@ struct SDKSubscriptionPromotionalOfferRepositoryTests {
         #expect(result[0].territory == "USA")
         #expect(result[0].subscriptionPricePointId == "spp-9")
     }
+
+    @Test func `promotional offer prices include every territory beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> SubscriptionPromotionalOfferPricesResponse {
+            SubscriptionPromotionalOfferPricesResponse(
+                data: range.map { i in
+                    AppStoreConnect_Swift_SDK.SubscriptionPromotionalOfferPrice(
+                        type: .subscriptionPromotionalOfferPrices, id: "p-\(i)",
+                        relationships: .init(
+                            territory: .init(data: .init(type: .territories, id: "T\(i)")),
+                            subscriptionPricePoint: .init(data: .init(type: .subscriptionPricePoints, id: "pp-\(i)"))
+                        )
+                    )
+                },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 175, limit: 200, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<100, nextCursor: "page-2"), page(100..<175, nextCursor: nil)])
+
+        let repo = SDKSubscriptionPromotionalOfferRepository(client: stub)
+        let result = try await repo.listPrices(offerId: "po-1")
+
+        #expect(result.count == 175)
+        #expect(result.last?.territory == "T174")
+        #expect(result.last?.subscriptionPricePointId == "pp-174")
+    }
 }
