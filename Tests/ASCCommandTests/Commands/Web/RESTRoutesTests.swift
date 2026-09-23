@@ -1245,4 +1245,19 @@ struct RESTRoutesTests {
         #expect(output.contains("/api/v1/apps/app-1/prices/set"))
         #expect(output.contains("/api/v1/apps/app-1/price-points"))
     }
+
+    // MARK: - App availability
+
+    @Test func `app availability links to itself over REST`() async throws {
+        let repo = MockAppAvailabilityRepository()
+        given(repo).getAppAvailability(appId: .any).willReturn(
+            AppAvailability(id: "avail-1", appId: "app-42", isAvailableInNewTerritories: true, territories: [])
+        )
+
+        let output = try await AppAvailabilityGet.parse(["--app-id", "app-42"])
+            .execute(repo: repo, affordanceMode: .rest).replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(output.contains("\"_links\""))
+        #expect(output.contains("/api/v1/apps/app-42/availability"))
+    }
 }

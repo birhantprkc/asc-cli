@@ -1,3 +1,4 @@
+import Foundation
 import ArgumentParser
 import Domain
 
@@ -14,20 +15,20 @@ struct AppAvailabilityGet: AsyncParsableCommand {
 
     func run() async throws {
         let repo = try ClientProvider.makeAppAvailabilityRepository()
-        print(try await execute(repo: repo))
+        let output = try await execute(repo: repo)
+        print(output)
+        if output.contains("\"data\" : [\n\n  ]") || output.contains("\"data\":[]") {
+            FileHandle.standardError.write(Data((
+                "App availability isn't set up. Set it up with: "
+                + "asc app-availability create --app-id \(appId) --all-territories --available-in-new-territories\n"
+            ).utf8))
+        }
     }
 
-    func execute(repo: any AppAvailabilityRepository) async throws -> String {
+    func execute(repo: any AppAvailabilityRepository, affordanceMode: AffordanceMode = .cli) async throws -> String {
         let availability = try await repo.getAppAvailability(appId: appId)
         let formatter = OutputFormatter(format: globals.outputFormat, pretty: globals.pretty)
-        return try formatter.formatAgentItems(
-            [availability],
-            headers: ["ID", "App ID", "Available in New Territories", "Territories"],
-            rowMapper: {
-                let available = $0.territories.filter(\.isAvailable).count
-                let total = $0.territories.count
-                return [$0.id, $0.appId, String($0.isAvailableInNewTerritories), "\(available)/\(total) available"]
-            }
-        )
+        // nil → empty data array: availability was never set up (mirrors `iap-availability get`).
+        return try formatter.formatAgentItems(availability.map { [$0] } ?? [], affordanceMode: affordanceMode)
     }
 }

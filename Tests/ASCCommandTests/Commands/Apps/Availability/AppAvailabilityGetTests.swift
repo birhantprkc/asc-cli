@@ -72,4 +72,19 @@ struct AppAvailabilityGetTests {
         }
         """)
     }
+
+    @Test func `an app with no availability set up shows no data`() async throws {
+        let mockRepo = MockAppAvailabilityRepository()
+        given(mockRepo).getAppAvailability(appId: .any).willReturn(nil)
+
+        let output = try await AppAvailabilityGet.parse(["--app-id", "app-42", "--pretty"]).execute(repo: mockRepo)
+
+        #expect(output == """
+        {
+          "data" : [
+
+          ]
+        }
+        """)
+    }
 }

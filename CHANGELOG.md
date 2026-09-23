@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Product versions** — `asc iap versions list --iap-id`, `asc subscriptions versions list --subscription-id` and `asc subscription-groups versions list --group-id` show each product's review versions and state; a submittable version offers `addToSubmission`. IAPs, subscriptions and groups gain a `listVersions` affordance. REST: `GET /api/v1/{iap,subscriptions,subscription-groups}/:id/versions`.
 - **Build a review submission step by step** — `asc review-submissions create --app-id [--platform]` (opens or reuses the app's draft), `items add --submission-id` with one of `--version-id`, `--iap-version-id`, `--subscription-version-id`, `--subscription-group-version-id`, `items remove --item-id`, and `submit --submission-id`. REST: `POST /api/v1/apps/:appId/review-submissions`, `POST /api/v1/review-submissions/:id/items`, `DELETE /api/v1/review-submissions/items/:itemId`, `POST /api/v1/review-submissions/:id/submit`.
 - **App pricing** — `asc apps price-points list --app-id [--territory USA]` lists the prices an app can be sold at (every page, ~800 per territory; the `0.0` point makes it free) and `asc apps prices set --app-id --base-territory --price-point-id` sets the app's price, which Apple equalizes worldwide. Fixes the "App is not eligible for submission until pricing has been set" refusal from the CLI. `App` gains a `listPricePoints` affordance. REST: `GET /api/v1/apps/:appId/price-points?territory=`, `POST /api/v1/apps/:appId/prices/set`. See `docs/features/app-pricing.md`.
+- **Set up app availability** — `asc app-availability create --app-id (--territory X … | --all-territories) [--available-in-new-territories]` sets where an app is sold (App Store Connect's "Set Up Availability"), in one `POST /v2/appAvailabilities`. REST: `POST /api/v1/apps/:appId/availability`, plus `GET` for the existing read.
 - **`STORAGE` performance metrics** — the new category Apple reports is mapped and usable with `perf-metrics list --metric-type STORAGE`.
 
 ### Changed
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Refused submissions explain why** — when Apple refuses to add an item to, or submit, a review submission, the error lists the specific reasons from Apple's `associatedErrors` (missing device screenshots, content rights declaration, App Privacy answers, pricing) instead of only "please check associated errors".
 
 ### Fixed
+- **`app-availability get` on an app that was never set up** — printed a raw 404; it now returns `{"data":[]}` and a hint with the `create` command (`getAppAvailability` returns `nil`).
 - **`review-submissions items list` shows what each item points at** — items never asked Apple for their relationships (`include=`), so every item showed no linked type or id, even app versions. They now show `APP_STORE_VERSION`, the new product version types and the others, with the `getVersion` affordance for app versions.
 
 ---
