@@ -427,4 +427,70 @@ struct SDKSubmissionRepositoryTests {
         #expect(patch?.body == #"{"data":{"attributes":{"submitted":true},"id":"sub-1","type":"reviewSubmissions"}}"#)
         #expect(submission == Domain.ReviewSubmission(id: "sub-1", appId: "app-1", platform: .iOS, state: .waitingForReview))
     }
+
+    // MARK: - Apple's reasons for refusing
+
+    /// The 409 Apple returns when an app version isn't ready: the headline says to look at
+    /// associated errors, and the real reasons sit in `meta.associatedErrors`.
+    private func appVersionNotReviewable() -> APIProvider.Error {
+        func error(_ code: String, _ detail: String) -> ResponseError {
+            ResponseError(status: "409", code: code, title: "The request entity is not valid.", detail: detail)
+        }
+        return .requestFailure(409, ErrorResponse(errors: [
+            ResponseError(
+                status: "409", code: "STATE_ERROR.ENTITY_STATE_INVALID", title: "The request cannot be fulfilled.",
+                detail: "This resource cannot be reviewed, please check associated errors to see why.",
+                meta: .init(associatedErrors: [
+                    "/v2/appPrices/": [error("STATE_ERROR.APP_PRICING_REQUIRED",
+                                             "App is not eligible for submission until pricing has been set.")],
+                    "/v1/appScreenshots/": [error("STATE_ERROR.SCREENSHOT_REQUIRED.APP_IPAD_PRO_3GEN_129",
+                                                  "A screenshot for one of the following types is required but was not provided: APP_IPAD_PRO_3GEN_129")],
+                ])
+            ),
+        ]), nil)
+    }
+
+    @Test func `when Apple refuses an item the error lists each reason it gave`() async throws {
+        let stub = StubAPIClient()
+        stub.errorToThrow = appVersionNotReviewable()
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        await #expect {
+            _ = try await repo.addItem(submissionId: "sub-1", target: .appStoreVersion("v-1"))
+        } throws: { error in
+            String(describing: error) == """
+            Apple refused the review submission: This resource cannot be reviewed, please check associated errors to see why.
+              - A screenshot for one of the following types is required but was not provided: APP_IPAD_PRO_3GEN_129
+              - App is not eligible for submission until pricing has been set.
+            """
+        }
+    }
+
+    @Test func `when Apple refuses to submit the error lists each reason it gave`() async throws {
+        let stub = StubAPIClient()
+        stub.errorToThrow = appVersionNotReviewable()
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        await #expect {
+            _ = try await repo.submit(submissionId: "sub-1")
+        } throws: { error in
+            String(describing: error).hasPrefix("Apple refused the review submission: ")
+                && String(describing: error).contains("  - App is not eligible for submission until pricing has been set.")
+        }
+    }
+
+    @Test func `an Apple server error is reported as it is, not as a refusal`() async throws {
+        let stub = StubAPIClient()
+        stub.errorToThrow = APIProvider.Error.requestFailure(500, ErrorResponse(errors: [
+            ResponseError(status: "500", code: "UNEXPECTED_ERROR", title: "An unexpected error occurred.",
+                          detail: "An unexpected error occurred on the server side."),
+        ]), nil)
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        await #expect {
+            _ = try await repo.addItem(submissionId: "sub-1", target: .appStoreVersion("v-1"))
+        } throws: { error in
+            !(error is ReviewSubmissionError) && String(describing: error).contains("UNEXPECTED_ERROR")
+        }
+    }
 }

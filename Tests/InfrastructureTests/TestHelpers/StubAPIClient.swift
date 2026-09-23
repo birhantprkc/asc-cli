@@ -31,6 +31,9 @@ final class StubAPIClient: APIClient, @unchecked Sendable {
         let body: String?
     }
 
+    /// When set, every request throws this error (simulates an ASC failure response).
+    var errorToThrow: (any Error)?
+
     func willReturn<T>(_ response: T) {
         stubsByType[String(describing: T.self)] = response
         lastStub = response
@@ -47,6 +50,7 @@ final class StubAPIClient: APIClient, @unchecked Sendable {
         requests.append(RecordedRequest(
             method: endpoint.method, path: endpoint.path, query: endpoint.query, body: Self.encodedBody(of: endpoint)
         ))
+        if let errorToThrow { throw errorToThrow }
         let key = String(describing: T.self)
         if var pages = pagesByType[key], !pages.isEmpty, let page = pages.removeFirst() as? T {
             pagesByType[key] = pages

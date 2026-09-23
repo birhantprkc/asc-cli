@@ -103,9 +103,11 @@ public struct OpenAPISubmissionRepository: SubmissionRepository, @unchecked Send
         case .subscriptionGroupVersion(let id):
             relationships.subscriptionGroupVersion = .init(data: .init(type: .subscriptionGroupVersions, id: id))
         }
-        let response = try await client.request(APIEndpoint.v1.reviewSubmissionItems.post(
-            ReviewSubmissionItemCreateRequest(data: .init(type: .reviewSubmissionItems, relationships: relationships))
-        ))
+        let response = try await explainingRefusal {
+            try await client.request(APIEndpoint.v1.reviewSubmissionItems.post(
+                ReviewSubmissionItemCreateRequest(data: .init(type: .reviewSubmissionItems, relationships: relationships))
+            ))
+        }
         // Apple's create response omits the relationship, so the target supplies it.
         let item = mapSubmissionItem(response.data, submissionId: submissionId)
         return Domain.ReviewSubmissionItem(
@@ -119,11 +121,13 @@ public struct OpenAPISubmissionRepository: SubmissionRepository, @unchecked Send
     }
 
     public func submit(submissionId: String) async throws -> Domain.ReviewSubmission {
-        _ = try await client.request(APIEndpoint.v1.reviewSubmissions.id(submissionId).patch(
-            ReviewSubmissionUpdateRequest(data: .init(
-                type: .reviewSubmissions, id: submissionId, attributes: .init(isSubmitted: true)
+        _ = try await explainingRefusal {
+            try await client.request(APIEndpoint.v1.reviewSubmissions.id(submissionId).patch(
+                ReviewSubmissionUpdateRequest(data: .init(
+                    type: .reviewSubmissions, id: submissionId, attributes: .init(isSubmitted: true)
+                ))
             ))
-        ))
+        }
         // The PATCH response doesn't carry the app relationship — re-read it.
         return try await getSubmission(id: submissionId)
     }
@@ -260,5 +264,21 @@ public struct OpenAPISubmissionRepository: SubmissionRepository, @unchecked Send
             state: state,
             submittedDate: sdkSubmission.attributes?.submittedDate
         )
+    }
+
+    /// Apple's refusals carry a generic headline ("please check associated errors") and
+    /// put the actual reasons in `meta.associatedErrors`, which the SDK's error text drops.
+    /// Surface them so the user knows what to fix.
+    private func explainingRefusal<T>(_ request: () async throws -> T) async throws -> T {
+        do {
+            return try await request()
+        } catch APIProvider.Error.requestFailure(let status, let response?, _) where (400..<500).contains(status) {
+            guard let first = response.errors?.first else { throw APIError.unknown("\(response)") }
+            let reasons = (response.errors ?? [])
+                .compactMap { $0.meta?.associatedErrors }
+                .flatMap { $0.sorted(by: { $0.key < $1.key }).flatMap(\.value) }
+                .map { $0.detail ?? $0.title }
+            throw ReviewSubmissionError.refused(message: first.detail ?? first.title, reasons: reasons)
+        }
     }
 }
