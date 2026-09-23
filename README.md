@@ -5,7 +5,7 @@
 [![CI](https://github.com/tddworks/asc-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/tddworks/asc-cli/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/tddworks/asc-cli/graph/badge.svg?token=v0k1Vzubrx)](https://codecov.io/gh/tddworks/asc-cli)
 [![Swift](https://img.shields.io/badge/Swift-6.2-orange)](https://swift.org)
-[![Platform](https://img.shields.io/badge/macOS-15%2B-blue)](https://www.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/macOS-14%2B-blue)](https://www.apple.com/macos/)
 
 A CLI for App Store Connect — automate builds, releases, TestFlight, subscriptions, and screenshots from your terminal or CI pipeline. Outputs structured JSON so AI agents can drive the full release workflow.
 

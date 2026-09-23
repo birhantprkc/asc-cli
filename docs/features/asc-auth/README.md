@@ -99,14 +99,14 @@ The same operations are reachable via `asc web-server`, so a local web app (e.g.
 |---|---|---|---|
 | POST | `/api/v1/auth/accounts` | `asc auth login` | `{ "keyId", "issuerId", "privateKeyPEM", "name"?, "vendorNumber"? }` |
 | GET | `/api/v1/auth/accounts` | `asc auth list` | — |
-| GET | `/api/v1/auth/accounts/active` | `asc auth check` | — |
+| GET | `/api/v1/auth/accounts/active` | `asc auth check` (saved accounts only; no env-var fallback, 404 when none is active) | — |
 | PATCH | `/api/v1/auth/accounts/active` | `asc auth use NAME` | `{ "name": "personal" }` |
 | PATCH | `/api/v1/auth/accounts/:name` | `asc auth update --vendor-number N` | `{ "vendorNumber": "12345678" }` |
 | DELETE | `/api/v1/auth/accounts/active` | `asc auth logout` | — |
 | DELETE | `/api/v1/auth/accounts/:name` | `asc auth logout --name X` | — |
 
 ```bash
-curl -X POST http://localhost:5173/api/v1/auth/accounts \
+curl -X POST http://localhost:8420/api/v1/auth/accounts \
   -H 'content-type: application/json' \
   -d '{
     "keyId": "KEYID123",
@@ -121,8 +121,8 @@ The response has the same `{ "data": [ ... ] }` shape as `asc auth login`.
 ## Gotchas
 
 - **Resolution order:** the active account in `~/.asc/credentials.json` first, then environment variables. A saved account shadows your env vars; run `asc auth check` to see which `source` is in use.
-- **Security:** the REST auth routes write the API key PEM to `~/.asc/credentials.json`. Bind `asc web-server` to loopback (`127.0.0.1`) only; never expose it on a routable interface.
-- `login` needs exactly one of `--private-key-path` (supports `~`) or `--private-key`.
+- **Security:** the REST auth routes write the API key PEM to `~/.asc/credentials.json`. `asc web-server` listens on all interfaces (`0.0.0.0`), so only run it on a trusted network or behind a firewall.
+- `login` needs `--private-key-path` (supports `~`) or `--private-key`; if both are passed, the path wins.
 - `login` makes the new account active. `logout` without `--name` removes the active account.
 - `credentials.json` stores every account (key ID, issuer ID, PEM) under `accounts`, plus the name of the `active` one. An old single-credential file is migrated to an account named `default` on first use.
 

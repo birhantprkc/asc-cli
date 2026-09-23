@@ -66,7 +66,7 @@ Once set, the record has a real `id` and the contact fields (`contactFirstName`,
 
 ## Gotchas
 - `update` is an upsert: if no record exists (empty `id`) it creates one, otherwise it changes only the fields you pass and leaves the rest as they are.
-- Apple returns `{"data": null}` rather than a 404 for a version with no review info. The CLI turns that into the empty record above, so check for `"id": ""` to find unset review info.
+- Any error reading review info, including Apple's `{"data": null}` for a version that has none, is returned as the empty record above, so check for `"id": ""` to find unset review info.
 - `reviewContactCheck` needs both `contactEmail` and `contactPhone`. It is a SHOULD FIX warning in `check-readiness` and does not block submission.
 - A demo account counts as configured only when `--demo-account-required` is `false`, or when both a name and a password are set.
 - Unset fields are omitted from the JSON.

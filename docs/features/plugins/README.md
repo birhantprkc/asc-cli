@@ -59,12 +59,12 @@ asc plugins update --name Hello
 | POST | `/api/v1/plugins/:name/update` | `asc plugins update --name X` |
 
 ```bash
-curl -X POST http://localhost:5173/api/v1/plugins \
-  -H 'content-type: application/json' -d '{"name":"Hello.plugin"}'
-curl "http://localhost:5173/api/v1/plugins/market?q=hello"
-curl -X DELETE http://localhost:5173/api/v1/plugins/Hello.plugin
-curl http://localhost:5173/api/v1/plugins/updates
-curl -X POST http://localhost:5173/api/v1/plugins/Hello/update
+curl -X POST http://localhost:8420/api/v1/plugins \
+  -H 'content-type: application/json' -d '{"name":"asc-pro"}'      # marketplace id
+curl "http://localhost:8420/api/v1/plugins/market?q=hello"
+curl -X DELETE http://localhost:8420/api/v1/plugins/ASCPro              # installed folder name
+curl http://localhost:8420/api/v1/plugins/updates
+curl -X POST http://localhost:8420/api/v1/plugins/ASCPro/update
 ```
 
 ## Gotchas

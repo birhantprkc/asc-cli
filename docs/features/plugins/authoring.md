@@ -56,7 +56,7 @@ AffordanceRegistry.register(Simulator.self) { id, props in
 
 This produces:
 - **CLI**: `"stream": "asc simulators stream --udid <id>"`
-- **REST**: `"stream": {"href": "/api/v1/simulators/<id>/stream", "method": "POST"}`
+- **REST**: `"stream": {"href": "/api/v1/simulators", "method": "POST"}` — the resolver has no nested simulator route, so a plugin that wants `/simulators/<udid>/stream` must register that route itself
 
 ## How plugins are loaded
 

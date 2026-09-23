@@ -21,7 +21,7 @@ asc promoted-purchases update --promoted-id <PROMOTED_ID> --hidden
 asc promoted-purchases delete --promoted-id <PROMOTED_ID>
 ```
 
-`--visible` / `--hidden` set `isVisibleForAllUsers`; `--enabled` / `--disabled` set `isEnabled`. Omitting a pair leaves that field unchanged.
+`--visible` / `--hidden` set `isVisibleForAllUsers`; `--enabled` / `--disabled` set `isEnabled`. Omitting a pair leaves that field unchanged on `update`; on `create`, visibility defaults to visible.
 
 In table output the promoted target shows as `iap:<id>` or `sub:<id>`.
 

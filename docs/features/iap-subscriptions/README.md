@@ -6,7 +6,7 @@ description: Manage in-app purchases and auto-renewable subscriptions end to end
 
 In-app purchases (consumable, non-consumable, non-renewing subscriptions) and auto-renewable subscriptions: lifecycle, pricing, offer codes, promotional and win-back offers, and review assets. Every flag: [iap](../../commands.md#asc-iap), [subscription-groups](../../commands.md#asc-subscription-groups), [subscriptions](../../commands.md#asc-subscriptions).
 
-Every command also serves as a REST endpoint when running `asc web-server`. Affordances in the JSON output are state-aware: they only suggest the next legal action.
+Most list/read commands and many writes are also served by `asc web-server` (subscription create/update/delete and intro-offer create are CLI-only). Affordances in the JSON output are state-aware: they only suggest the next legal action.
 
 ## Quick start
 ```bash
@@ -34,8 +34,8 @@ When `asc web-server` is running, every IAP and subscription from the list endpo
 
 | Resource | List endpoint | Embedded `_links` keys |
 |----------|---------------|------------------------|
-| `InAppPurchase` | `GET /api/v1/apps/:appId/iap` | `listLocalizations`, `listOfferCodes`, `listImages`, `listPricePoints`, `getAvailability`, `getReviewScreenshot`, `update`, `delete`, `submit` (only when `READY_TO_SUBMIT`), `createLocalization` |
-| `Subscription` | `GET /api/v1/subscription-groups/:groupId/subscriptions` | `listLocalizations`, `listIntroductoryOffers`, `listOfferCodes`, `listPromotionalOffers`, `listWinBackOffers`, `listPricePoints`, `getAvailability`, `getReviewScreenshot`, `update`, `delete`, `submit` (only when `READY_TO_SUBMIT`), `createLocalization`, `createIntroductoryOffer`, `createPromotionalOffer` |
+| `InAppPurchase` | `GET /api/v1/apps/:appId/iap` | `listLocalizations`, `listOfferCodes`, `listImages`, `listPricePoints`, `getAvailability`, `getReviewScreenshot`, `update`, `delete`, `submit` / `addToNextVersion` / `removeFromNextVersion` (see Gotchas), `createLocalization`, and more |
+| `Subscription` | `GET /api/v1/subscription-groups/:groupId/subscriptions` | `listLocalizations`, `listIntroductoryOffers`, `listOfferCodes`, `listPromotionalOffers`, `listWinBackOffers`, `listPricePoints`, `getAvailability`, `getReviewScreenshot`, `update`, `delete`, `submit` (only when `READY_TO_SUBMIT`), `createLocalization`, `createIntroductoryOffer`, `createPromotionalOffer`, and more |
 
 For an IAP with id `iap-7`:
 
@@ -52,7 +52,7 @@ Subscriptions follow the same shape under `/api/v1/subscriptions/{id}/…` (`lis
 
 ## Gotchas
 Affordances hide themselves when the action wouldn't succeed:
-- `submit` only appears on an IAP or subscription whose state is `READY_TO_SUBMIT`.
+- `submit` appears on a subscription in `READY_TO_SUBMIT`. On an IAP it also needs the IAP not to be queued and not to be a first-time submission; otherwise a ready IAP gets `addToNextVersion`, or `removeFromNextVersion` once queued.
 - A promotional image has no `delete` while it is pending review.
 - A review screenshot still awaiting upload offers only `upload`, not `delete`.
 - A subscription price point without a territory has no `setPrice`.

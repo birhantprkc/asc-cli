@@ -114,7 +114,7 @@ Reports are CLI-only; `asc web-server` has no report routes yet.
 
 - `--vendor-number` is optional: it is auto-resolved from the active account (saved via `asc auth login --vendor-number` or `asc auth update --vendor-number`). An explicit value overrides it.
 - `--report-date` is optional only for `DAILY` (omit it to get the latest). `WEEKLY`, `MONTHLY` and `YEARLY` require it. Weekly dates must be a Sunday (e.g. `2024-01-07`); monthly dates look like `2024-01`.
-- `--version` sets the report schema version (e.g. `1_1` for `SALES/SUMMARY/DAILY`); omit it for Apple's default. An invalid value comes back as `PARAMETER_ERROR.INVALID` with the latest supported version.
+- `--version` sets the report schema version (e.g. `1_4` for `SALES/SUMMARY/DAILY`); omit it for Apple's default. An invalid value comes back as `PARAMETER_ERROR.INVALID` with the latest supported version.
 - Sales and finance reports are gzip-compressed TSV from Apple; asc decompresses and parses them, so columns differ per report type.
 - `customerSpend` and `proceeds` are kept per currency, because summing across currencies would be meaningless.
 - Apple amends daily reports for up to 5 days. `summary` reads the same `/v1/salesReports` data as `download`, so the most recent day may not match the App Store Connect mobile app's Trends view (which uses an internal endpoint).

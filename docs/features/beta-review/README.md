@@ -18,7 +18,7 @@ asc beta-review submissions list --build-id <BUILD_ID>
 ### Send a build to external testers
 ```bash
 # 1. Upload a build
-asc builds upload --app-id APP_ID --file MyApp.ipa --build-number 42
+asc builds upload --app-id APP_ID --file MyApp.ipa --version 1.0.0 --build-number 42
 
 # 2. Add the build to an external beta group
 asc builds add-beta-group --build-id BUILD_ID --beta-group-id GROUP_ID

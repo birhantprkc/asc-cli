@@ -2,7 +2,7 @@
 
 ## Build & test
 
-Requires Swift 6.2+ on macOS.
+Requires Swift 6.2+ on macOS 14+.
 
 ```bash
 git clone https://github.com/tddworks/asc-cli.git && cd asc-cli

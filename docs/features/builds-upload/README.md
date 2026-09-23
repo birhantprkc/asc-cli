@@ -69,7 +69,7 @@ asc builds remove-beta-group --build-id <BUILD_ID> --beta-group-id <GROUP_ID>
 | PATCH | `/api/v1/builds/:buildId/encryption-compliance` | `asc builds set-encryption-compliance` |
 
 ```bash
-curl -X PATCH http://localhost:8080/api/v1/builds/build-1/encryption-compliance \
+curl -X PATCH http://localhost:8420/api/v1/builds/build-1/encryption-compliance \
   -H 'Content-Type: application/json' \
   -d '{"usesNonExemptEncryption": false}'
 ```

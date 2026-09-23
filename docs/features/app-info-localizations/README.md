@@ -52,9 +52,11 @@ The `app-infos list` response links onward to localizations and age rating:
       "id": "info-abc123",
       "appId": "6746148194",
       "affordances": {
-        "listLocalizations": "asc app-info-localizations list --app-info-id info-abc123",
+        "createLocalization": "asc app-info-localizations create --app-info-id info-abc123",
+        "getAgeRating": "asc age-rating get --app-info-id info-abc123",
         "listAppInfos": "asc app-infos list --app-id 6746148194",
-        "getAgeRating": "asc age-rating get --app-info-id info-abc123"
+        "listLocalizations": "asc app-info-localizations list --app-info-id info-abc123",
+        "updateCategories": "asc app-infos update --app-info-id info-abc123"
       }
     }
   ]
@@ -68,7 +70,7 @@ The `app-infos list` response links onward to localizations and age rating:
 | GET | `/api/v1/app-infos/:appInfoId/localizations` | `asc app-info-localizations list --app-info-id` |
 | POST | `/api/v1/app-infos/:appInfoId/localizations` | `asc app-info-localizations create` (body `{"locale", "name"}`) |
 | PATCH | `/api/v1/app-info-localizations/:localizationId` | `asc app-info-localizations update` (body uses `name`, `subtitle`, `privacyPolicyUrl`, `privacyChoicesUrl`, `privacyPolicyText`) |
-| DELETE | `/api/v1/app-info-localizations/:localizationId` | none (REST only) |
+| DELETE | `/api/v1/app-info-localizations/:localizationId` | `asc app-info-localizations delete --localization-id` |
 
 ## Gotchas
 - These fields are app-level. Release notes, description and keywords are per version and live in [version-localizations](../version-localizations/README.md).

@@ -23,11 +23,11 @@ asc skills list                              # browse what's available
 asc skills install --name asc-cli            # one skill (no flags = all)
 asc skills installed --pretty                # what you have
 asc skills check                             # updates available?
-asc skills update                            # refresh installed skills
+asc skills update                            # re-install all skills from the repo (same as install --all)
 asc skills uninstall --name asc-game-center  # remove one
 ```
 
-`installed` reads `~/.claude/skills/` and returns each skill with state-aware affordances: installed skills get `uninstall`, others get `install`.
+`installed` reads `~/.claude/skills/` and returns each skill with `listSkills` and `uninstall` affordances.
 
 ```json
 {
@@ -54,8 +54,7 @@ asc skills uninstall --name asc-game-center  # remove one
 ## Gotchas
 
 - `list`, `install`, `check` and `update` shell out to the `skills` npm tool (`npx skills ...`), so Node.js/`npx` must be available. `installed` and `uninstall` work directly on `~/.claude/skills/`.
-- **Automatic update check:** any `asc` command may run a silent background `skills check` and print a hint to stderr when updates exist. It is skipped when `ASC_SKIP_SKILL_CHECK=true`, when `CI` or `CONTINUOUS_INTEGRATION` is set, or when the last check was less than 24h ago.
-- The last-check time is saved as `skillsCheckedAt` in `~/.asc/skills-config.json`. It is not saved when the skills tool is unavailable, so the check retries on the next run.
+- `asc skills check` saves the check time as `skillsCheckedAt` in `~/.asc/skills-config.json` on every run.
 - Skills are not exposed over REST.
 
 ## See also

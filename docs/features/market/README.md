@@ -22,7 +22,7 @@ asc plugins market list                 # browse everything
 asc plugins market search --query sim   # matches name, description, categories
 asc plugins install --name asc-pro      # use the marketplace "id"
 asc plugins list                        # verify
-asc plugins uninstall --name ASCPro     # use the installed "slug"
+asc plugins uninstall --name ASCPro     # folder name, or the marketplace id asc-pro
 ```
 
 Marketplace entries show whether they are already installed, and their affordances change to match:
@@ -39,7 +39,7 @@ Marketplace entries show whether they are already installed, and their affordanc
       "isInstalled" : false,
       "affordances" : {
         "install" : "asc plugins install --name asc-pro",
-        "listMarket" : "asc plugins market list",
+        "browseMarket" : "asc plugins market list",
         "viewRepository" : "https://github.com/tddworks/asc-pro"
       }
     }
@@ -48,7 +48,7 @@ Marketplace entries show whether they are already installed, and their affordanc
 ```
 
 ### Publish your plugin to the registry
-1. Build the plugin as a `.plugin` bundle (dylib + `manifest.json` + optional `ui/`).
+1. Build the plugin as a `.plugin` bundle (`manifest.json`, plus a dylib for server code and/or `ui/` scripts).
 2. Publish a `.plugin.zip` release asset on your GitHub repo.
 3. Fork [tddworks/asc-registry](https://github.com/tddworks/asc-registry) and add an entry to `registry.json`.
 4. Open a PR. Once it is merged, the plugin appears in `asc plugins market list`.
@@ -92,7 +92,7 @@ A `registry.json` entry (`id`, `name`, `version`, `description` and `downloadURL
 | DELETE | `/api/v1/plugins/:name` | `asc plugins uninstall --name` |
 
 ## Gotchas
-- `install` takes the marketplace `id` (e.g. `asc-pro`), but `uninstall` takes the installed plugin's `slug`, which is its directory name (e.g. `ASCPro`).
+- `install` takes the marketplace `id` (e.g. `asc-pro`); `uninstall` takes either the installed folder name (e.g. `ASCPro`) or the marketplace id.
 - The REST search parameter is `q`, not `query`.
 - The registry is a single file: `https://raw.githubusercontent.com/tddworks/asc-registry/main/registry.json`.
 - `install` downloads the zip from `downloadURL` and extracts it into `~/.asc/plugins/`; `uninstall` deletes `~/.asc/plugins/<name>.plugin/`.

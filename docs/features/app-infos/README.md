@@ -66,11 +66,11 @@ asc app-infos update \
 ```
 
 ```
-ID                   Platforms                  ParentId
+ID                   Platforms                  Parent ID
 -------------------  -------------------------  --------
-GAMES                IOS, MAC_OS, TV_OS         -
-GAMES_ACTION         IOS, MAC_OS, TV_OS         -
-UTILITIES            IOS, MAC_OS, TV_OS         -
+GAMES                IOS,MAC_OS,TV_OS           -
+GAMES_ACTION         IOS,MAC_OS,TV_OS           -
+UTILITIES            IOS,MAC_OS,TV_OS           -
 ```
 
 ### Navigate from AppInfo
@@ -81,6 +81,7 @@ The AppInfo JSON carries affordances to its localizations, categories and age ra
   "id": "info-abc123",
   "appId": "6746148194",
   "affordances": {
+    "createLocalization": "asc app-info-localizations create --app-info-id info-abc123",
     "getAgeRating":      "asc age-rating get --app-info-id info-abc123",
     "listAppInfos":      "asc app-infos list --app-id 6746148194",
     "listLocalizations": "asc app-info-localizations list --app-info-id info-abc123",

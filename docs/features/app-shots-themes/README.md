@@ -25,7 +25,7 @@ asc app-shots themes get --id space --pretty
 asc app-shots themes get --id space --context   # print the AI prompt the theme produces
 ```
 
-A theme in JSON:
+A theme in JSON (trimmed; `icon` and `previewGradient` are also present):
 ```json
 {
   "id": "space", "name": "Space",

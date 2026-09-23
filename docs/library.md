@@ -8,7 +8,7 @@ In your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/tddworks/asc-cli.git", from: "0.1.0"),
+    .package(url: "https://github.com/tddworks/asc-cli.git", from: "0.18.0"),
 ],
 targets: [
     .target(
@@ -49,10 +49,10 @@ let authProvider = StaticAuthProvider(credentials: credentials)
 
 let appRepo = try factory.makeAppRepository(authProvider: authProvider)
 let apps = try await appRepo.listApps(limit: 50)
-apps.data.forEach { print($0.name, $0.bundleID) }
+apps.data.forEach { print($0.name, $0.bundleId) }
 
 let buildRepo = try factory.makeBuildRepository(authProvider: authProvider)
-let builds = try await buildRepo.listBuilds(appId: "YOUR_APP_ID", limit: 10)
+let builds = try await buildRepo.listBuilds(appId: "YOUR_APP_ID", platform: nil, version: nil, limit: 10)
 ```
 
 ## Repositories

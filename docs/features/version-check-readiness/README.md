@@ -102,7 +102,7 @@ No REST route today; `check-readiness` is CLI-only.
 ## Gotchas
 - `affordances.submit` only appears when `isReadyToSubmit` is `true`; `checkReadiness` and `listLocalizations` are always present. Every `AppStoreVersion` also carries a `checkReadiness` affordance.
 - `reviewContactCheck` failing does not block submission; it is a warning.
-- `localizationCheck.pass` depends only on the primary locale (the first one the API returns): it needs a description and at least one screenshot set that contains screenshots. A secondary locale with no screenshots shows `pass: false` but the version is still ready.
+- `localizationCheck.pass` depends only on the app's primary locale (`primaryLocale`, or the first localization returned when that is unset): it needs a description and at least one screenshot set that contains screenshots. A secondary locale with no screenshots shows `pass: false` but the version is still ready.
 - `localizationCheck.pass` is `false` when the version has no localizations at all.
 - `pricingCheck` is `false` whenever the app's price schedule can't be read, not only when it is missing.
 

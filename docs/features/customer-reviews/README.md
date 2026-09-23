@@ -65,7 +65,7 @@ asc review-responses create --review-id rev-001 --response-body "Updated respons
 
 ### Extract ratings
 ```bash
-asc reviews list --app-id 123456789 | jq '.[].rating'
+asc reviews list --app-id 123456789 | jq '.data[].rating'
 ```
 
 ## REST
@@ -80,4 +80,4 @@ Responses (get/create/delete) are CLI-only.
 - Response `state` is `PUBLISHED` or `PENDING_PUBLISH` (`isPublished` / `isPending`); a new response may sit in pending before Apple publishes it.
 - `asc reviews get` returns an empty `appId`, because Apple's single-review endpoint doesn't return the parent app.
 - Nil fields (`title`, `body`, `reviewerNickname`, `createdDate`, `territory`) are omitted from JSON rather than sent as null.
-- `list` returns all reviews sorted newest first; there is no rating/territory filter or pagination yet.
+- `list` fetches every page and returns all reviews newest first; there is no rating/territory filter or `--limit`.

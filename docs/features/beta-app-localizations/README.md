@@ -77,7 +77,7 @@ Each localization carries its own next steps:
 | `GET` | `/api/v1/beta-app-localizations/:localizationId` | `asc beta-app-localizations get --localization-id <id>` |
 
 ```bash
-curl http://localhost:8080/api/v1/apps/1234567890/beta-app-localizations
+curl http://localhost:8420/api/v1/apps/1234567890/beta-app-localizations
 ```
 
 ## Gotchas

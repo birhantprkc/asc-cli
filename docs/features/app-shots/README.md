@@ -77,8 +77,9 @@ asc app-shots generate --file screen.png --device-type APP_IPHONE_67
 Theme routes are listed in [App Shots Themes](../app-shots-themes/README.md#rest).
 
 ## Gotchas
+- asc ships no templates, gallery templates or themes; they come from plugins (e.g. ASC Pro). Without one, `templates list` returns `{"data":[]}`, and IDs like `top-hero` are examples.
 - The Gemini key is stored in `~/.asc/app-shots-config.json`; `--gemini-api-key` on `generate` overrides it, otherwise it falls back to env/config.
-- `--device-type` on `generate` resizes output to App Store dimensions; without it the output keeps the source size.
+- `--device-type` on `generate` resizes output to App Store dimensions; without it the output is whatever size Gemini returns.
 - Sizing uses CSS `cqi` units, so the HTML preview (320px container) and the PNG export (full viewport) keep the same proportions.
 - In a gallery the first screenshot becomes the hero; shots without a headline are not rendered.
 

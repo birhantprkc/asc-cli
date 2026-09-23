@@ -80,7 +80,7 @@ Create and update are CLI-only.
 
 ## Gotchas
 - These are version-level fields. App-level name, subtitle and privacy URLs live in [app-info-localizations](../app-info-localizations/README.md).
-- Empty fields are omitted from the JSON, so a missing `whatsNew` means it has not been set.
+- Unset (null) fields are omitted from the JSON, so a missing `whatsNew` means it has not been set.
 - `--keywords` is a single comma-separated string.
 - There is no delete command.
 

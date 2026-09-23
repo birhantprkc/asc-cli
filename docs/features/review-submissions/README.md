@@ -33,7 +33,7 @@ asc review-submissions items list --submission-id "$SUB_ID" --state REJECTED
 # 3. Fix the rejected version (read Apple's notes in Resolution Center)
 VERSION_ID=$(asc review-submissions items list --submission-id "$SUB_ID" --state REJECTED \
              | jq -r '.data[0].linkedResourceId')
-asc versions get --version-id "$VERSION_ID"
+asc versions check-readiness --version-id "$VERSION_ID"
 
 # 4. After fixing, resubmit
 asc versions submit --version-id "$VERSION_ID"
@@ -44,10 +44,13 @@ A submission with issues carries `listRejectedItems`:
 ```json
 {
   "affordances" : {
+    "addItem" : "asc review-submissions items add --submission-id sub-1 --version-id <version-id>",
+    "getResolutionDetails" : "asc iris resolution-center get --submission-id sub-1",
     "getSubmission" : "asc review-submissions get --submission-id sub-1",
     "listItems" : "asc review-submissions items list --submission-id sub-1",
     "listRejectedItems" : "asc review-submissions items list --state REJECTED --submission-id sub-1",
-    "listVersions" : "asc versions list --app-id 1234567890"
+    "listVersions" : "asc versions list --app-id 1234567890",
+    "submit" : "asc review-submissions submit --submission-id sub-1"
   },
   "appId" : "1234567890",
   "id" : "sub-1",
@@ -61,6 +64,7 @@ A rejected item links straight to the version:
 ```json
 {
   "affordances" : {
+    "getResolutionDetails" : "asc iris resolution-center get --submission-id sub-1",
     "getSubmission" : "asc review-submissions get --submission-id sub-1",
     "getVersion" : "asc versions get --version-id v-9",
     "listSiblings" : "asc review-submissions items list --submission-id sub-1"
@@ -86,8 +90,8 @@ A rejected item links straight to the version:
 | `POST` | `/api/v1/review-submissions/{id}/submit` | `review-submissions submit` |
 
 ```bash
-curl http://localhost:8080/api/v1/review-submissions/sub-1
-curl 'http://localhost:8080/api/v1/review-submissions/sub-1/items?state=REJECTED'
+curl http://localhost:8420/api/v1/review-submissions/sub-1
+curl 'http://localhost:8420/api/v1/review-submissions/sub-1/items?state=REJECTED'
 ```
 
 ## Gotchas
