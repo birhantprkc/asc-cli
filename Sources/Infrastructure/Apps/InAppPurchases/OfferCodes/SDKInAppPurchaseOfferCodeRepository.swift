@@ -84,9 +84,12 @@ public struct SDKInAppPurchaseOfferCodeRepository: InAppPurchaseOfferCodeReposit
     // MARK: - Prices
 
     public func listPrices(offerCodeId: String) async throws -> [Domain.InAppPurchaseOfferCodePrice] {
-        let request = APIEndpoint.v1.inAppPurchaseOfferCodes.id(offerCodeId).prices.get()
-        let response = try await client.request(request)
-        return response.data.map { mapPrice($0, offerCodeId: offerCodeId) }
+        // One price per territory — follow every page to get all 175.
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.inAppPurchaseOfferCodes.id(offerCodeId).prices.get(parameters: .init(limit: 200)),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).map { mapPrice($0, offerCodeId: offerCodeId) }
     }
 
     // MARK: - Custom Codes

@@ -376,4 +376,31 @@ struct SDKInAppPurchaseOfferCodeRepositoryTests {
         let result = try await repo.fetchOneTimeUseCodeValues(oneTimeCodeId: "otc-1")
         #expect(result == "CODE1\nCODE2\nCODE3\n")
     }
+
+    @Test func `offer code prices include every territory beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> InAppPurchaseOfferPricesResponse {
+            InAppPurchaseOfferPricesResponse(
+                data: range.map { i in
+                    AppStoreConnect_Swift_SDK.InAppPurchaseOfferPrice(
+                        type: .inAppPurchaseOfferPrices, id: "p-\(i)",
+                        relationships: .init(
+                            territory: .init(data: .init(type: .territories, id: "T\(i)")),
+                            pricePoint: .init(data: .init(type: .inAppPurchasePricePoints, id: "pp-\(i)"))
+                        )
+                    )
+                },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 175, limit: 200, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<100, nextCursor: "page-2"), page(100..<175, nextCursor: nil)])
+
+        let repo = SDKInAppPurchaseOfferCodeRepository(client: stub)
+        let result = try await repo.listPrices(offerCodeId: "oc-1")
+
+        #expect(result.count == 175)
+        #expect(result.last?.territory == "T174")
+        #expect(result.last?.pricePointId == "pp-174")
+    }
 }

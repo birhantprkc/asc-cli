@@ -411,4 +411,31 @@ struct SDKSubscriptionOfferCodeRepositoryTests {
         let result = try await repo.fetchOneTimeUseCodeValues(oneTimeCodeId: "otc-1")
         #expect(result == "ABC\nDEF\n")
     }
+
+    @Test func `offer code prices include every territory beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> SubscriptionOfferCodePricesResponse {
+            SubscriptionOfferCodePricesResponse(
+                data: range.map { i in
+                    AppStoreConnect_Swift_SDK.SubscriptionOfferCodePrice(
+                        type: .subscriptionOfferCodePrices, id: "p-\(i)",
+                        relationships: .init(
+                            territory: .init(data: .init(type: .territories, id: "T\(i)")),
+                            subscriptionPricePoint: .init(data: .init(type: .subscriptionPricePoints, id: "pp-\(i)"))
+                        )
+                    )
+                },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 175, limit: 200, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<100, nextCursor: "page-2"), page(100..<175, nextCursor: nil)])
+
+        let repo = SDKSubscriptionOfferCodeRepository(client: stub)
+        let result = try await repo.listPrices(offerCodeId: "oc-1")
+
+        #expect(result.count == 175)
+        #expect(result.last?.territory == "T174")
+        #expect(result.last?.subscriptionPricePointId == "pp-174")
+    }
 }

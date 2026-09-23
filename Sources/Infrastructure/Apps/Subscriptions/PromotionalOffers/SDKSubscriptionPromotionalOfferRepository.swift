@@ -69,9 +69,12 @@ public struct SDKSubscriptionPromotionalOfferRepository: SubscriptionPromotional
     }
 
     public func listPrices(offerId: String) async throws -> [Domain.SubscriptionPromotionalOfferPrice] {
-        let request = APIEndpoint.v1.subscriptionPromotionalOffers.id(offerId).prices.get()
-        let response = try await client.request(request)
-        return response.data.map { mapPrice($0, offerId: offerId) }
+        // One price per territory — follow every page to get all 175.
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.subscriptionPromotionalOffers.id(offerId).prices.get(parameters: .init(limit: 200)),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).map { mapPrice($0, offerId: offerId) }
     }
 
     private func mapOffer(
