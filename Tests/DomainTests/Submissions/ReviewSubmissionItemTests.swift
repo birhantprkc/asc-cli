@@ -93,4 +93,10 @@ struct ReviewSubmissionItemTests {
         )
         #expect(item.affordances["getVersion"] == nil)
     }
+
+    @Test func `items can point at in-app purchase, subscription and subscription group versions`() {
+        #expect(ReviewSubmissionItemLinkedResource.inAppPurchaseVersion.rawValue == "IN_APP_PURCHASE_VERSION")
+        #expect(ReviewSubmissionItemLinkedResource.subscriptionVersion.rawValue == "SUBSCRIPTION_VERSION")
+        #expect(ReviewSubmissionItemLinkedResource.subscriptionGroupVersion.rawValue == "SUBSCRIPTION_GROUP_VERSION")
+    }
 }

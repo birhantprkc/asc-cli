@@ -77,7 +77,17 @@ public struct OpenAPISubmissionRepository: SubmissionRepository, @unchecked Send
     }
 
     public func listSubmissionItems(submissionId: String) async throws -> [Domain.ReviewSubmissionItem] {
-        let request = APIEndpoint.v1.reviewSubmissions.id(submissionId).items.get(parameters: .init())
+        // `include` makes Apple return each item's relationship linkage, which the mapper
+        // reads to report what the item points at.
+        let request = APIEndpoint.v1.reviewSubmissions.id(submissionId).items.get(parameters: .init(
+            include: [
+                .appStoreVersion, .appCustomProductPageVersion,
+                .appStoreVersionExperimentV2, .appEvent, .backgroundAssetVersion,
+                .gameCenterAchievementVersion, .gameCenterActivityVersion, .gameCenterChallengeVersion,
+                .gameCenterLeaderboardSetVersion, .gameCenterLeaderboardVersion,
+                .inAppPurchaseVersion, .subscriptionVersion, .subscriptionGroupVersion,
+            ]
+        ))
         let response = try await client.request(request)
         return response.data.map { mapSubmissionItem($0, submissionId: submissionId) }
     }
@@ -105,6 +115,9 @@ public struct OpenAPISubmissionRepository: SubmissionRepository, @unchecked Send
             if let id = sdkItem.relationships?.gameCenterChallengeVersion?.data?.id { return (id, .gameCenterChallengeVersion) }
             if let id = sdkItem.relationships?.gameCenterLeaderboardSetVersion?.data?.id { return (id, .gameCenterLeaderboardSetVersion) }
             if let id = sdkItem.relationships?.gameCenterLeaderboardVersion?.data?.id { return (id, .gameCenterLeaderboardVersion) }
+            if let id = sdkItem.relationships?.inAppPurchaseVersion?.data?.id { return (id, .inAppPurchaseVersion) }
+            if let id = sdkItem.relationships?.subscriptionVersion?.data?.id { return (id, .subscriptionVersion) }
+            if let id = sdkItem.relationships?.subscriptionGroupVersion?.data?.id { return (id, .subscriptionGroupVersion) }
             return (nil, nil)
         }()
 

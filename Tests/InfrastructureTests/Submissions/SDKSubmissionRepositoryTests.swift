@@ -289,4 +289,52 @@ struct SDKSubmissionRepositoryTests {
         #expect(results.first?.submittedDate == date)
         #expect(results.first?.state == .inReview)
     }
+
+    @Test func `listing items asks Apple which resource each item points at`() async throws {
+        // Apple only returns an item's relationship linkage when asked via `include`.
+        let stub = StubAPIClient()
+        stub.willReturn(ReviewSubmissionItemsResponse(data: [], links: .init(this: "")))
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        _ = try await repo.listSubmissionItems(submissionId: "sub-1")
+
+        let query = Dictionary(uniqueKeysWithValues: (stub.lastQuery ?? []).map { ($0.0, $0.1 ?? "") })
+        let included = Set((query["include"] ?? "").split(separator: ",").map(String.init))
+        #expect(included.isSuperset(of: [
+            "appStoreVersion", "appCustomProductPageVersion",
+            "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion",
+            "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion",
+            "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion",
+            "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion",
+        ]))
+        // Apple rejects v1 and v2 experiments in the same request (400 PARAMETER_ERROR.INVALID).
+        #expect(!included.contains("appStoreVersionExperiment"))
+    }
+
+    @Test func `product version items show which product version they point at`() async throws {
+        let stub = StubAPIClient()
+        stub.willReturn(ReviewSubmissionItemsResponse(
+            data: [
+                ReviewSubmissionItem(
+                    type: .reviewSubmissionItems, id: "item-iap", attributes: .init(state: .readyForReview),
+                    relationships: .init(inAppPurchaseVersion: .init(data: .init(type: .inAppPurchaseVersions, id: "iapv-1")))
+                ),
+                ReviewSubmissionItem(
+                    type: .reviewSubmissionItems, id: "item-sub", attributes: .init(state: .readyForReview),
+                    relationships: .init(subscriptionVersion: .init(data: .init(type: .subscriptionVersions, id: "subv-1")))
+                ),
+                ReviewSubmissionItem(
+                    type: .reviewSubmissionItems, id: "item-group", attributes: .init(state: .readyForReview),
+                    relationships: .init(subscriptionGroupVersion: .init(data: .init(type: .subscriptionGroupVersions, id: "grpv-1")))
+                ),
+            ],
+            links: .init(this: "")
+        ))
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        let items = try await repo.listSubmissionItems(submissionId: "sub-1")
+
+        #expect(items.map(\.linkedResourceType) == [.inAppPurchaseVersion, .subscriptionVersion, .subscriptionGroupVersion])
+        #expect(items.map(\.linkedResourceId) == ["iapv-1", "subv-1", "grpv-1"])
+    }
 }
