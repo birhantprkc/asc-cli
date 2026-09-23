@@ -38,6 +38,7 @@ struct PerformanceMetricTests {
         #expect(PerformanceMetricCategory.battery.rawValue == "BATTERY")
         #expect(PerformanceMetricCategory.termination.rawValue == "TERMINATION")
         #expect(PerformanceMetricCategory.animation.rawValue == "ANIMATION")
+        #expect(PerformanceMetricCategory.storage.rawValue == "STORAGE")
     }
 
     @Test func `metric affordances for app parent include list app metrics`() {

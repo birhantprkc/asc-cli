@@ -226,4 +226,36 @@ struct SDKPerfMetricsRepositoryTests {
 
         #expect(result.isEmpty)
     }
+
+    @Test func `storage metrics from Apple show as the storage category`() async throws {
+        let stub = StubAPIClient()
+        stub.willReturn(makeXcodeMetrics(categoryIdentifier: .storage, metricIdentifier: "storageUsed"))
+
+        let repo = SDKPerfMetricsRepository(client: stub)
+        let result = try await repo.listAppMetrics(appId: "app-1", metricType: nil)
+
+        #expect(result.map(\.category) == [.storage])
+    }
+
+    @Test func `filtering app metrics by storage asks Apple for storage metrics only`() async throws {
+        let stub = StubAPIClient()
+        stub.willReturn(makeXcodeMetrics(categoryIdentifier: .storage, metricIdentifier: "storageUsed"))
+
+        let repo = SDKPerfMetricsRepository(client: stub)
+        _ = try await repo.listAppMetrics(appId: "app-1", metricType: .storage)
+
+        let query = Dictionary(uniqueKeysWithValues: (stub.lastQuery ?? []).map { ($0.0, $0.1 ?? "") })
+        #expect(query["filter[metricType]"] == "STORAGE")
+    }
+
+    @Test func `filtering build metrics by storage asks Apple for storage metrics only`() async throws {
+        let stub = StubAPIClient()
+        stub.willReturn(makeXcodeMetrics(categoryIdentifier: .storage, metricIdentifier: "storageUsed"))
+
+        let repo = SDKPerfMetricsRepository(client: stub)
+        _ = try await repo.listBuildMetrics(buildId: "build-1", metricType: .storage)
+
+        let query = Dictionary(uniqueKeysWithValues: (stub.lastQuery ?? []).map { ($0.0, $0.1 ?? "") })
+        #expect(query["filter[metricType]"] == "STORAGE")
+    }
 }
