@@ -55,4 +55,22 @@ struct SDKBundleIDRepositoryTests {
 
         #expect(stub.voidRequestCalled == true)
     }
+
+    @Test func `bundle ids list includes every bundle id beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> BundleIDsResponse {
+            BundleIDsResponse(
+                data: range.map { i in AppStoreConnect_Swift_SDK.BundleID(type: .bundleIDs, id: "item-\(i)", attributes: .init(name: "B\(i)", platform: .ios, identifier: "com.example.b\(i)")) },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKBundleIDRepository(client: stub)
+        let result = try await repo.listBundleIDs(platform: nil, identifier: nil)
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }

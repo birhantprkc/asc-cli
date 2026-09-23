@@ -12,12 +12,15 @@ public struct SDKBundleIDRepository: BundleIDRepository, @unchecked Sendable {
         let filterPlatform = platform.flatMap {
             APIEndpoint.V1.BundleIDs.GetParameters.FilterPlatform(rawValue: $0.rawValue)
         }
-        let request = APIEndpoint.v1.bundleIDs.get(parameters: .init(
-            filterPlatform: filterPlatform.map { [$0] },
-            filterIdentifier: identifier.map { [$0] }
-        ))
-        let response = try await client.request(request)
-        return response.data.map(mapBundleID)
+        let pages = try await client.requestAllPages(
+            APIEndpoint.v1.bundleIDs.get(parameters: .init(
+                filterPlatform: filterPlatform.map { [$0] },
+                filterIdentifier: identifier.map { [$0] },
+                limit: 200
+            )),
+            nextCursor: { $0.meta?.paging.nextCursor }
+        )
+        return pages.flatMap(\.data).map(mapBundleID)
     }
 
     public func createBundleID(name: String, identifier: String, platform: Domain.BundleIDPlatform) async throws -> Domain.BundleID {

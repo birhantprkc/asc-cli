@@ -257,4 +257,22 @@ struct SDKDiagnosticsRepositoryTests {
 
         #expect(result.isEmpty)
     }
+
+    @Test func `diagnostic signatures list includes every signature beyond the first page`() async throws {
+        func page(_ range: Range<Int>, nextCursor: String?) -> DiagnosticSignaturesResponse {
+            DiagnosticSignaturesResponse(
+                data: range.map { i in makeSDKSignature(id: "item-\(i)") },
+                links: .init(this: ""),
+                meta: .init(paging: .init(total: 75, limit: 50, nextCursor: nextCursor))
+            )
+        }
+        let stub = StubAPIClient()
+        stub.willReturnPages([page(0..<50, nextCursor: "page-2"), page(50..<75, nextCursor: nil)])
+
+        let repo = SDKDiagnosticsRepository(client: stub)
+        let result = try await repo.listSignatures(buildId: "build-1", diagnosticType: nil)
+
+        #expect(result.count == 75)
+        #expect(result.last?.id == "item-74")
+    }
 }
