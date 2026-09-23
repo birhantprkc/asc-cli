@@ -60,6 +60,9 @@ final class StubAPIClient: APIClient, @unchecked Sendable {
 
     func request(_ endpoint: Request<Void>) async throws {
         voidRequestCalled = true
+        requests.append(RecordedRequest(
+            method: endpoint.method, path: endpoint.path, query: endpoint.query, body: Self.encodedBody(of: endpoint)
+        ))
     }
 
     /// `Request.body` is internal to the SDK, so read it reflectively and JSON-encode it.

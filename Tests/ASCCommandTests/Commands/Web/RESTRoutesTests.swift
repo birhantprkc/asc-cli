@@ -1177,4 +1177,28 @@ struct RESTRoutesTests {
         #expect(all[2].contains("/api/v1/subscription-groups/grp-1/versions"))
         #expect(all.allSatisfy { $0.contains("/api/v1/review-submissions/<submission-id>/items") })
     }
+
+    // MARK: - Building a review submission
+
+    @Test func `a draft submission links to adding items and submitting, and a new item links to removing it`() async throws {
+        let mockRepo = MockSubmissionRepository()
+        given(mockRepo).createSubmission(appId: .any, platform: .any).willReturn(
+            ReviewSubmission(id: "sub-1", appId: "app-1", platform: .iOS, state: .readyForReview)
+        )
+        given(mockRepo).addItem(submissionId: .any, target: .any).willReturn(
+            ReviewSubmissionItem(id: "item-1", submissionId: "sub-1", state: .readyForReview,
+                                 linkedResourceId: "iv-1", linkedResourceType: .inAppPurchaseVersion)
+        )
+
+        let draft = try await ReviewSubmissionsCreate.parse(["--app-id", "app-1"])
+            .execute(repo: mockRepo, affordanceMode: .rest).replacingOccurrences(of: "\\/", with: "/")
+        let item = try await ReviewSubmissionItemsAdd.parse(["--submission-id", "sub-1", "--iap-version-id", "iv-1"])
+            .execute(repo: mockRepo, affordanceMode: .rest).replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(draft.contains("\"_links\""))
+        #expect(draft.contains("/api/v1/review-submissions/sub-1/items"))
+        #expect(draft.contains("/api/v1/review-submissions/sub-1/submit"))
+        #expect(item.contains("/api/v1/review-submissions/items/item-1"))
+        #expect(item.contains("\"DELETE\""))
+    }
 }

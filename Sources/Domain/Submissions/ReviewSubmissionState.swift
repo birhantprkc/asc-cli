@@ -21,6 +21,10 @@ public enum ReviewSubmissionState: String, Sendable, Equatable, Codable, CaseIte
     /// The submission has unresolved issues that require developer action.
     public var hasIssues: Bool { self == .unresolvedIssues }
 
+    /// Still accepts items and can be submitted: a draft, or a submission Apple
+    /// sent back with issues.
+    public var isEditable: Bool { self == .readyForReview || self == .unresolvedIssues }
+
     public var displayName: String {
         switch self {
         case .readyForReview: return "Ready for Review"

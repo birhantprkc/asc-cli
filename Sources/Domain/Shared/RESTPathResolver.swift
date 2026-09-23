@@ -118,7 +118,9 @@ public final class RESTPathResolver: @unchecked Sendable {
         // Multi-word commands (e.g. `iris iap-submissions`) carry their CLI subcommand
         // structure as a space; convert to a slash for clean URL segments.
         let urlSegment = segment.replacingOccurrences(of: " ", with: "/")
-        if action == "get" || action == "update" || action == "delete" {
+        // `remove` detaches a resource from its parent (e.g. an item from a review
+        // submission) — addressed like `delete`, by the resource's own path.
+        if action == "get" || action == "update" || action == "delete" || action == "remove" {
             return "\(base)/\(urlSegment)/\(id)"
         }
         return "\(base)/\(urlSegment)/\(id)/\(action)"

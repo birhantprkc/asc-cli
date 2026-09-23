@@ -79,6 +79,10 @@ extension ReviewSubmissionItem: AffordanceProviding {
             Affordance(key: "listSiblings", command: "review-submissions items", action: "list",
                        params: ["submission-id": submissionId]),
         ]
+        if isPending {
+            items.append(Affordance(key: "remove", command: "review-submissions items", action: "remove",
+                                    params: ["item-id": id]))
+        }
         if isRejected {
             // The reviewer's message text lives only behind the iris (cookie-auth)
             // surface — the official API has no resolutionCenter endpoints.

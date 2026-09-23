@@ -25,6 +25,7 @@ public struct ReviewSubmission: Sendable, Equatable, Identifiable, Codable {
     public var isComplete: Bool { state.isComplete }
     public var isPending: Bool { state.isPending }
     public var hasIssues: Bool { state.hasIssues }
+    public var isEditable: Bool { state.isEditable }
 }
 
 extension ReviewSubmission: AffordanceProviding {
@@ -37,6 +38,14 @@ extension ReviewSubmission: AffordanceProviding {
             Affordance(key: "listVersions", command: "versions", action: "list",
                        params: ["app-id": appId]),
         ]
+        if isEditable {
+            // One representative target; `items add` also takes --iap-version-id,
+            // --subscription-version-id and --subscription-group-version-id.
+            items.append(Affordance(key: "addItem", command: "review-submissions items", action: "add",
+                                    params: ["submission-id": id, "version-id": "<version-id>"]))
+            items.append(Affordance(key: "submit", command: "review-submissions", action: "submit",
+                                    params: ["submission-id": id]))
+        }
         if hasIssues {
             // Agent shortcut: when Apple flags issues, the rejected items expose
             // which resource needs fixing — surface them as the first thing to do.

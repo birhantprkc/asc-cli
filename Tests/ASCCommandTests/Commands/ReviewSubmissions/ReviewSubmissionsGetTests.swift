@@ -20,11 +20,13 @@ struct ReviewSubmissionsGetTests {
           "data" : [
             {
               "affordances" : {
+                "addItem" : "asc review-submissions items add --submission-id sub-1 --version-id <version-id>",
                 "getResolutionDetails" : "asc iris resolution-center get --submission-id sub-1",
                 "getSubmission" : "asc review-submissions get --submission-id sub-1",
                 "listItems" : "asc review-submissions items list --submission-id sub-1",
                 "listRejectedItems" : "asc review-submissions items list --state REJECTED --submission-id sub-1",
-                "listVersions" : "asc versions list --app-id app-42"
+                "listVersions" : "asc versions list --app-id app-42",
+                "submit" : "asc review-submissions submit --submission-id sub-1"
               },
               "appId" : "app-42",
               "id" : "sub-1",

@@ -337,4 +337,94 @@ struct SDKSubmissionRepositoryTests {
         #expect(items.map(\.linkedResourceType) == [.inAppPurchaseVersion, .subscriptionVersion, .subscriptionGroupVersion])
         #expect(items.map(\.linkedResourceId) == ["iapv-1", "subv-1", "grpv-1"])
     }
+
+    // MARK: - Building a submission
+
+    @Test func `creating a submission reuses the app's open draft for that platform`() async throws {
+        let stub = StubAPIClient()
+        stub.willReturn(ReviewSubmissionsResponse(
+            data: [ReviewSubmission(type: .reviewSubmissions, id: "draft-1",
+                                    attributes: .init(platform: .ios, state: .readyForReview))],
+            links: .init(this: "")
+        ))
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        let submission = try await repo.createSubmission(appId: "app-1", platform: .iOS)
+
+        #expect(submission == Domain.ReviewSubmission(id: "draft-1", appId: "app-1", platform: .iOS, state: .readyForReview))
+        #expect(!stub.requests.contains { $0.method == "POST" })
+    }
+
+    @Test func `creating a submission creates a draft when the app has none open`() async throws {
+        let stub = StubAPIClient()
+        stub.willReturn(ReviewSubmissionsResponse(data: [], links: .init(this: "")))
+        stub.willReturn(ReviewSubmissionResponse(
+            data: ReviewSubmission(type: .reviewSubmissions, id: "new-1",
+                                   attributes: .init(platform: .ios, state: .readyForReview)),
+            links: .init(this: "")
+        ))
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        let submission = try await repo.createSubmission(appId: "app-1", platform: .iOS)
+
+        #expect(submission == Domain.ReviewSubmission(id: "new-1", appId: "app-1", platform: .iOS, state: .readyForReview))
+        let post = stub.requests.first { $0.method == "POST" }
+        #expect(post?.path == "/v1/reviewSubmissions")
+        #expect(post?.body == #"{"data":{"attributes":{"platform":"IOS"},"relationships":{"app":{"data":{"id":"app-1","type":"apps"}}},"type":"reviewSubmissions"}}"#)
+    }
+
+    @Test func `adding each kind of version sends it as the item's relationship`() async throws {
+        let cases: [(ReviewItemTarget, String, Domain.ReviewSubmissionItemLinkedResource)] = [
+            (.appStoreVersion("v-1"), #""appStoreVersion":{"data":{"id":"v-1","type":"appStoreVersions"}}"#, .appStoreVersion),
+            (.inAppPurchaseVersion("iv-1"), #""inAppPurchaseVersion":{"data":{"id":"iv-1","type":"inAppPurchaseVersions"}}"#, .inAppPurchaseVersion),
+            (.subscriptionVersion("sv-1"), #""subscriptionVersion":{"data":{"id":"sv-1","type":"subscriptionVersions"}}"#, .subscriptionVersion),
+            (.subscriptionGroupVersion("gv-1"), #""subscriptionGroupVersion":{"data":{"id":"gv-1","type":"subscriptionGroupVersions"}}"#, .subscriptionGroupVersion),
+        ]
+        for (target, relationship, linkedType) in cases {
+            let stub = StubAPIClient()
+            stub.willReturn(ReviewSubmissionItemResponse(
+                data: ReviewSubmissionItem(type: .reviewSubmissionItems, id: "item-1", attributes: .init(state: .readyForReview)),
+                links: .init(this: "")
+            ))
+
+            let repo = OpenAPISubmissionRepository(client: stub)
+            let item = try await repo.addItem(submissionId: "sub-1", target: target)
+
+            let post = stub.requests.first { $0.method == "POST" }
+            #expect(post?.path == "/v1/reviewSubmissionItems")
+            #expect(post?.body?.contains(relationship) == true)
+            #expect(post?.body?.contains(#""reviewSubmission":{"data":{"id":"sub-1","type":"reviewSubmissions"}}"#) == true)
+            #expect(item == Domain.ReviewSubmissionItem(
+                id: "item-1", submissionId: "sub-1", state: .readyForReview,
+                linkedResourceId: target.id, linkedResourceType: linkedType
+            ))
+        }
+    }
+
+    @Test func `removing an item deletes it from its submission`() async throws {
+        let stub = StubAPIClient()
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        try await repo.removeItem(itemId: "item-1")
+
+        #expect(stub.requests.map { "\($0.method) \($0.path)" } == ["DELETE /v1/reviewSubmissionItems/item-1"])
+    }
+
+    @Test func `submitting sends the draft to review and returns its new state`() async throws {
+        let stub = StubAPIClient()
+        stub.willReturn(ReviewSubmissionResponse(
+            data: ReviewSubmission(type: .reviewSubmissions, id: "sub-1",
+                                   attributes: .init(platform: .ios, state: .waitingForReview),
+                                   relationships: .init(app: .init(data: .init(type: .apps, id: "app-1")))),
+            links: .init(this: "")
+        ))
+
+        let repo = OpenAPISubmissionRepository(client: stub)
+        let submission = try await repo.submit(submissionId: "sub-1")
+
+        let patch = stub.requests.first { $0.method == "PATCH" }
+        #expect(patch?.path == "/v1/reviewSubmissions/sub-1")
+        #expect(patch?.body == #"{"data":{"attributes":{"submitted":true},"id":"sub-1","type":"reviewSubmissions"}}"#)
+        #expect(submission == Domain.ReviewSubmission(id: "sub-1", appId: "app-1", platform: .iOS, state: .waitingForReview))
+    }
 }

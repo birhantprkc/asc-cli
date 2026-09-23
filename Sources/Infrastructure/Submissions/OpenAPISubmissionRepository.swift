@@ -67,6 +67,67 @@ public struct OpenAPISubmissionRepository: SubmissionRepository, @unchecked Send
         return try await patchSubmitted(id: submissionId, appId: appId, platform: platform)
     }
 
+    public func createSubmission(appId: String, platform: Domain.AppStorePlatform) async throws -> Domain.ReviewSubmission {
+        guard let sdkPlatform = AppStoreConnect_Swift_SDK.Platform(rawValue: platform.rawValue) else {
+            throw APIError.unknown("Unsupported review submission platform \(platform.rawValue)")
+        }
+        let listResp = try await client.request(APIEndpoint.v1.reviewSubmissions.get(parameters: .init(
+            filterPlatform: APIEndpoint.V1.ReviewSubmissions.GetParameters.FilterPlatform(rawValue: platform.rawValue).map { [$0] },
+            filterState: [.unresolvedIssues, .readyForReview],
+            filterApp: [appId]
+        )))
+        if let open = listResp.data.first {
+            return mapListedSubmission(open, appId: appId)
+        }
+        let created = try await client.request(APIEndpoint.v1.reviewSubmissions.post(
+            ReviewSubmissionCreateRequest(data: .init(
+                type: .reviewSubmissions,
+                attributes: .init(platform: sdkPlatform),
+                relationships: .init(app: .init(data: .init(type: .apps, id: appId)))
+            ))
+        ))
+        return mapListedSubmission(created.data, appId: appId)
+    }
+
+    public func addItem(submissionId: String, target: Domain.ReviewItemTarget) async throws -> Domain.ReviewSubmissionItem {
+        var relationships = ReviewSubmissionItemCreateRequest.Data.Relationships(
+            reviewSubmission: .init(data: .init(type: .reviewSubmissions, id: submissionId))
+        )
+        switch target {
+        case .appStoreVersion(let id):
+            relationships.appStoreVersion = .init(data: .init(type: .appStoreVersions, id: id))
+        case .inAppPurchaseVersion(let id):
+            relationships.inAppPurchaseVersion = .init(data: .init(type: .inAppPurchaseVersions, id: id))
+        case .subscriptionVersion(let id):
+            relationships.subscriptionVersion = .init(data: .init(type: .subscriptionVersions, id: id))
+        case .subscriptionGroupVersion(let id):
+            relationships.subscriptionGroupVersion = .init(data: .init(type: .subscriptionGroupVersions, id: id))
+        }
+        let response = try await client.request(APIEndpoint.v1.reviewSubmissionItems.post(
+            ReviewSubmissionItemCreateRequest(data: .init(type: .reviewSubmissionItems, relationships: relationships))
+        ))
+        // Apple's create response omits the relationship, so the target supplies it.
+        let item = mapSubmissionItem(response.data, submissionId: submissionId)
+        return Domain.ReviewSubmissionItem(
+            id: item.id, submissionId: submissionId, state: item.state,
+            linkedResourceId: target.id, linkedResourceType: target.linkedResource
+        )
+    }
+
+    public func removeItem(itemId: String) async throws {
+        try await client.request(APIEndpoint.v1.reviewSubmissionItems.id(itemId).delete)
+    }
+
+    public func submit(submissionId: String) async throws -> Domain.ReviewSubmission {
+        _ = try await client.request(APIEndpoint.v1.reviewSubmissions.id(submissionId).patch(
+            ReviewSubmissionUpdateRequest(data: .init(
+                type: .reviewSubmissions, id: submissionId, attributes: .init(isSubmitted: true)
+            ))
+        ))
+        // The PATCH response doesn't carry the app relationship — re-read it.
+        return try await getSubmission(id: submissionId)
+    }
+
     public func getSubmission(id: String) async throws -> Domain.ReviewSubmission {
         let request = APIEndpoint.v1.reviewSubmissions.id(id).get(parameters: .init(
             include: [.app]
