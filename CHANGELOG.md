@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.18.4] - 2026-09-23
+
 ### Fixed
 - **`asc subscriptions prices set-batch` sends one request instead of one per territory** — it now sends a single `PATCH /v1/subscriptions/{id}` with every price inlined (`SubscriptionPriceInlineCreate`) instead of one `POST /v1/subscriptionPrices` per territory. Pricing all 175 territories took 175 sequential POSTs (over a minute per subscription), and a failure partway through left some territories priced and others not; Apple now applies the batch all-or-nothing. The REST `POST /api/v1/subscriptions/:id/prices` route benefits too, since it uses the same repository method.
 - **Subscription price schedules no longer drop manual prices after the first 50** — `subscription-price-schedule get` (and the read-back after `set-batch`) fetched `/v1/subscriptions/{id}/prices` without a `limit`, so only Apple's default first page came back and the other territories were filled with the first price's equalizations, showing wrong prices where custom per-territory prices were set. It now requests `limit=200` and follows the pagination cursor.
@@ -973,7 +977,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/tddworks/asc-cli/compare/v0.18.3...HEAD
+[Unreleased]: https://github.com/tddworks/asc-cli/compare/v0.18.4...HEAD
+[0.18.4]: https://github.com/tddworks/asc-cli/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/tddworks/asc-cli/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/tddworks/asc-cli/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/tddworks/asc-cli/compare/v0.18.0...v0.18.1
