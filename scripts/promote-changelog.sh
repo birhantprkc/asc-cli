@@ -65,3 +65,6 @@ awk \
 
 mv "$TEMP_FILE" "$CHANGELOG_FILE"
 echo "Promoted [Unreleased] → [$VERSION] - $RELEASE_DATE in $CHANGELOG_FILE"
+
+# Keep CHANGELOG.md to [Unreleased] + the current minor; move older minors to docs/changelog/
+python3 "$(dirname "$0")/changelog-rollover.py" "$CHANGELOG_FILE"

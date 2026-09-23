@@ -514,7 +514,7 @@ asc simulators shutdown --udid <udid>
 asc web-server
 ```
 
-Streaming and interaction available via the [ASC Pro plugin](docs/features/plugin-ui-architecture.md).
+Streaming and interaction available via the [ASC Pro plugin](docs/features/plugins.md).
 
 ### Output & TUI
 
@@ -579,15 +579,15 @@ Detailed documentation for each feature:
 - [App Shots Themes](docs/features/app-shots-themes.md) — plugin-provided visual themes with two-step ThemeDesign workflow
 - [Plugins](docs/features/plugins.md) — custom event handlers (Slack, Telegram, webhooks)
 - [App Wall](docs/features/app-wall.md) — community showcase; `apps.json` format and architecture
-- [Users & Roles](docs/features/users.md) — team member management, role assignment, invitation lifecycle; directory integration for automated access control
+- [Users & Roles](docs/features/asc-users.md) — team member management, role assignment, invitation lifecycle; directory integration for automated access control
 - [Customer Reviews](docs/features/customer-reviews.md) — list reviews, respond to feedback, manage review responses
 - [Game Center](docs/features/game-center.md) — achievements (list, create, delete) and leaderboards (list, create, delete)
 - [Power & Performance](docs/features/performance.md) — performance metrics (app/build), diagnostic signatures, diagnostic logs
 - [Reports](docs/features/reports.md) — sales, finance, and analytics reports; TSV parsing, multi-step analytics workflow
-- [Iris (Private API)](docs/features/iris.md) — cookie-based auth; create apps, list apps via the iris private API
+- [Iris (Private API)](docs/features/iris/iris.md) — cookie-based auth; create apps, list apps via the iris private API
 - [Simulators](docs/features/simulators.md) — list, boot, shutdown; streaming via plugin
 - [Web Server](docs/features/web-server-architecture.md) — Hummingbird API server with plugin system
-- [Plugins](docs/features/plugin-ui-architecture.md) — extend CLI with routes, commands, affordances, and UI
+- [Plugins](docs/features/plugins.md) — extend CLI with routes, commands, affordances, and UI
 
 ## Design: CAEOAS
 
@@ -611,7 +611,7 @@ $ asc versions list --app-id app-abc
 }
 ```
 
-Affordances are state-aware — `submitForReview` only appears when `isEditable == true`. See [docs/design.md](docs/desgin.md) for the full pattern.
+Affordances are state-aware — `submitForReview` only appears when `isEditable == true`. See [docs/design.md](docs/design.md) for the full pattern.
 
 ## Use as a Swift Package (SPM)
 
