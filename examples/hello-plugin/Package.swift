@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../"),  // asc-cli
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", exact: "2.21.1"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", exact: "2.27.0"),
     ],
     targets: [
         .target(
