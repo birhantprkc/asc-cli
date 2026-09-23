@@ -93,4 +93,22 @@ struct ReviewSubmissionItemTests {
         )
         #expect(item.affordances["getVersion"] == nil)
     }
+
+    @Test func `items can point at in-app purchase, subscription and subscription group versions`() {
+        #expect(ReviewSubmissionItemLinkedResource.inAppPurchaseVersion.rawValue == "IN_APP_PURCHASE_VERSION")
+        #expect(ReviewSubmissionItemLinkedResource.subscriptionVersion.rawValue == "SUBSCRIPTION_VERSION")
+        #expect(ReviewSubmissionItemLinkedResource.subscriptionGroupVersion.rawValue == "SUBSCRIPTION_GROUP_VERSION")
+    }
+
+    @Test func `an item not yet submitted can be removed from its submission`() {
+        let item = MockRepositoryFactory.makeReviewSubmissionItem(id: "item-1", state: .readyForReview)
+        #expect(item.affordances["remove"] == "asc review-submissions items remove --item-id item-1")
+        #expect(item.apiLinks["remove"]?.href == "/api/v1/review-submissions/items/item-1")
+        #expect(item.apiLinks["remove"]?.method == "DELETE")
+    }
+
+    @Test func `a reviewed item cannot be removed`() {
+        let item = MockRepositoryFactory.makeReviewSubmissionItem(state: .approved)
+        #expect(item.affordances["remove"] == nil)
+    }
 }

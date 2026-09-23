@@ -8,6 +8,7 @@ public enum PerformanceMetricCategory: String, Sendable, Equatable, Codable, Cas
     case battery = "BATTERY"
     case termination = "TERMINATION"
     case animation = "ANIMATION"
+    case storage = "STORAGE"
 }
 
 public enum PerfMetricParentType: String, Sendable, Equatable, Codable {

@@ -9,6 +9,7 @@ struct SubscriptionGroupsCommand: AsyncParsableCommand {
             SubscriptionGroupsCreate.self,
             SubscriptionGroupsUpdate.self,
             SubscriptionGroupsDelete.self,
+            SubscriptionGroupVersionsCommand.self,
         ]
     )
 }

@@ -32,6 +32,7 @@ struct SubscriptionGroupsCreateTests {
                 "delete" : "asc subscription-groups delete --group-id grp-new",
                 "listLocalizations" : "asc subscription-group-localizations list --group-id grp-new",
                 "listSubscriptions" : "asc subscriptions list --group-id grp-new",
+                "listVersions" : "asc subscription-groups versions list --group-id grp-new",
                 "update" : "asc subscription-groups update --group-id grp-new --reference-name <name>"
               },
               "appId" : "app-1",

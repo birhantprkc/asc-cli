@@ -117,6 +117,8 @@ extension Subscription: Presentable {
 extension Subscription: AffordanceProviding {
     public var structuredAffordances: [Affordance] {
         var items: [Affordance] = [
+            Affordance(key: "listVersions", command: "subscriptions versions", action: "list",
+                       params: ["subscription-id": id]),
             Affordance(key: "createIntroductoryOffer", command: "subscription-offers", action: "create",
                        params: ["subscription-id": id, "duration": "ONE_MONTH", "mode": "FREE_TRIAL", "periods": "1"]),
             Affordance(key: "createLocalization", command: "subscription-localizations", action: "create",

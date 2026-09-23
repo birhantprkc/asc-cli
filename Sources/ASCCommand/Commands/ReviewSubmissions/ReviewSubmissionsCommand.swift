@@ -3,10 +3,12 @@ import ArgumentParser
 struct ReviewSubmissionsCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "review-submissions",
-        abstract: "Inspect App Store review submissions (state, rejected items, drill-in affordances)",
+        abstract: "Build, submit and inspect App Store review submissions (app versions plus IAP and subscription versions)",
         subcommands: [
             ReviewSubmissionsList.self,
             ReviewSubmissionsGet.self,
+            ReviewSubmissionsCreate.self,
+            ReviewSubmissionsSubmit.self,
             ReviewSubmissionItemsCommand.self,
         ]
     )

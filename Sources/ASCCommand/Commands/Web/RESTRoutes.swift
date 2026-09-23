@@ -59,6 +59,21 @@ enum RESTRoutes {
         if let promotedRepo = try? factory.makePromotedPurchaseRepository(authProvider: auth) {
             PromotedPurchasesController(repo: promotedRepo).addRoutes(to: v1)
         }
+        if let productVersionRepo = try? factory.makeProductVersionRepository(authProvider: auth) {
+            ProductVersionsController(repo: productVersionRepo).addRoutes(to: v1)
+            if let submissionRepo = try? factory.makeSubmissionRepository(authProvider: auth),
+               let versionRepo = try? factory.makeVersionRepository(authProvider: auth),
+               let iapRepo = try? factory.makeInAppPurchaseRepository(authProvider: auth),
+               let groupRepo = try? factory.makeSubscriptionGroupRepository(authProvider: auth),
+               let subscriptionRepo = try? factory.makeSubscriptionRepository(authProvider: auth) {
+                VersionSubmissionController(
+                    submissionRepo: submissionRepo,
+                    versionRepo: versionRepo,
+                    planner: SubmissionPlanner(iapRepo: iapRepo, groupRepo: groupRepo,
+                                               subscriptionRepo: subscriptionRepo, productVersionRepo: productVersionRepo)
+                ).addRoutes(to: v1)
+            }
+        }
         if let experimentRepo = try? factory.makeExperimentRepository(authProvider: auth) {
             ExperimentsController(repo: experimentRepo).addRoutes(to: v1)
         }

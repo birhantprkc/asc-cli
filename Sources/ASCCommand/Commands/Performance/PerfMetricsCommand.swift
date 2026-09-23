@@ -24,7 +24,7 @@ struct PerfMetricsList: AsyncParsableCommand {
     @Option(name: .long, help: "Build ID (mutually exclusive with --app-id)")
     var buildId: String?
 
-    @Option(name: .long, help: "Filter by metric type: HANG, LAUNCH, MEMORY, DISK, BATTERY, TERMINATION, ANIMATION")
+    @Option(name: .long, help: "Filter by metric type: HANG, LAUNCH, MEMORY, DISK, BATTERY, TERMINATION, ANIMATION, STORAGE")
     var metricType: String?
 
     func run() async throws {

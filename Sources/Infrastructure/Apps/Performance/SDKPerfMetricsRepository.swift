@@ -39,6 +39,7 @@ public struct SDKPerfMetricsRepository: PerfMetricsRepository, @unchecked Sendab
         case .memory: mapped = .memory
         case .animation: mapped = .animation
         case .termination: mapped = .termination
+        case .storage: mapped = .storage
         }
         return mapped.map { [$0] }
     }
@@ -56,6 +57,7 @@ public struct SDKPerfMetricsRepository: PerfMetricsRepository, @unchecked Sendab
         case .memory: mapped = .memory
         case .animation: mapped = .animation
         case .termination: mapped = .termination
+        case .storage: mapped = .storage
         }
         return mapped.map { [$0] }
     }
@@ -105,6 +107,7 @@ public struct SDKPerfMetricsRepository: PerfMetricsRepository, @unchecked Sendab
         case .battery: return .battery
         case .termination: return .termination
         case .animation: return .animation
+        case .storage: return .storage
         }
     }
 }

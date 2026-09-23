@@ -24,9 +24,20 @@ asc apps list          # find your app ID
 asc init --app-id <id> # pin it — skip --app-id on every future command
 ```
 
-### Optional: sign in to iris (unlocks first-time IAP submissions, web UI parity)
+### First-time IAPs and subscriptions: submit them with the app version
 
-The public ASC API (above) covers most workflows but **can't submit the first IAP for an app** — Apple requires that to ride along with a new App Store version, and the only path that accepts the flag is the iris private API. Sign in once with your Apple ID and `asc iap list` will auto-route the right command for each IAP:
+Apple requires first-time in-app purchases and subscriptions to go to review together with an app version. The public API supports this through product versions, so your API key is enough:
+
+```bash
+asc versions submit --version-id <id> --with-products --dry-run   # see what would go to review
+asc versions submit --version-id <id> --with-products             # app version + every READY_TO_SUBMIT product
+```
+
+See [docs/features/submit-with-products.md](docs/features/submit-with-products.md) for the step-by-step `review-submissions create / items add / submit` commands.
+
+### Optional: sign in to iris (web UI parity)
+
+Some App Store Connect web features have no public API. Sign in once with your Apple ID and `asc iap list` will also offer the iris submission routes for each IAP:
 
 ```bash
 asc iris auth login --apple-id you@example.com --interactive
@@ -46,7 +57,7 @@ Now `asc iap list --app-id <id>` enriches each IAP with the right submission aff
 
 | Category | What you can do |
 | --- | --- |
-| **Apps & Versions** | List apps, create versions, link builds, submit for App Store review |
+| **Apps & Versions** | List apps, create versions, link builds, submit for App Store review — with first-time IAPs and subscriptions in the same submission (`--with-products`) |
 | **Builds** | Archive Xcode projects, export IPA/PKG, upload to App Store Connect, distribute to TestFlight, update beta notes |
 | **Metadata** | Update What's New, description, and keywords per locale |
 | **App Info** | Set per-locale name, subtitle, privacy policy; manage categories and age rating |
@@ -152,7 +163,7 @@ asc versions list --app-id <id>
 asc versions create --app-id <id> --version <v> --platform ios
 asc versions set-build --version-id <id> --build-id <id>
 asc versions check-readiness --version-id <id>
-asc versions submit --version-id <id>
+asc versions submit --version-id <id> [--with-products] [--dry-run]
 asc version-review-detail get --version-id <id>
 asc version-review-detail update --version-id <id> --contact-first-name Jane --contact-email dev@example.com
 ```
@@ -194,6 +205,10 @@ asc beta-app-localizations delete --localization-id <id>
 asc review-submissions list --app-id <id> [--state WAITING_FOR_REVIEW,IN_REVIEW,READY_FOR_REVIEW] [--limit 200]
 asc review-submissions get --submission-id <id>
 asc review-submissions items list --submission-id <id> [--state REJECTED]
+asc review-submissions create --app-id <id> [--platform ios]
+asc review-submissions items add --submission-id <id> --iap-version-id <id>   # or --version-id / --subscription-version-id / --subscription-group-version-id
+asc review-submissions submit --submission-id <id>
+asc iap versions list --iap-id <id>                   # also: subscriptions / subscription-groups versions list
 
 # Rejected? Read App Review's actual message (iris cookie auth — see docs/features/resolution-center.md)
 asc iris resolution-center get --submission-id <id> --plain-text

@@ -80,4 +80,31 @@ struct ReviewSubmissionTests {
     func `state displayName is human readable`(state: ReviewSubmissionState, expected: String) {
         #expect(state.displayName == expected)
     }
+
+    // MARK: - Draft submissions
+
+    @Test func `a draft or rejected submission can still take items and be submitted`() {
+        #expect(MockRepositoryFactory.makeReviewSubmission(state: .readyForReview).isEditable)
+        #expect(MockRepositoryFactory.makeReviewSubmission(state: .unresolvedIssues).isEditable)
+        for state in [ReviewSubmissionState.waitingForReview, .inReview, .canceling, .completing, .complete] {
+            #expect(!MockRepositoryFactory.makeReviewSubmission(state: state).isEditable)
+        }
+    }
+
+    @Test func `a draft submission offers adding an item and submitting it`() {
+        let submission = MockRepositoryFactory.makeReviewSubmission(id: "sub-1", state: .readyForReview)
+        #expect(submission.affordances["addItem"]
+            == "asc review-submissions items add --submission-id sub-1 --version-id <version-id>")
+        #expect(submission.affordances["submit"] == "asc review-submissions submit --submission-id sub-1")
+        #expect(submission.apiLinks["addItem"]?.href == "/api/v1/review-submissions/sub-1/items")
+        #expect(submission.apiLinks["addItem"]?.method == "POST")
+        #expect(submission.apiLinks["submit"]?.href == "/api/v1/review-submissions/sub-1/submit")
+        #expect(submission.apiLinks["submit"]?.method == "POST")
+    }
+
+    @Test func `a submission already sent to review offers neither adding items nor submitting`() {
+        let submission = MockRepositoryFactory.makeReviewSubmission(state: .waitingForReview)
+        #expect(submission.affordances["addItem"] == nil)
+        #expect(submission.affordances["submit"] == nil)
+    }
 }

@@ -306,4 +306,10 @@ struct InAppPurchaseTests {
         #expect(iap.apiLinks["setPrice"]?.href == "/api/v1/iap/iap-1/prices/set")
         #expect(iap.apiLinks["setPrice"]?.method == "POST")
     }
+
+    @Test func `an in-app purchase points at its review versions`() {
+        let iap = MockRepositoryFactory.makeInAppPurchase(id: "iap-1")
+        #expect(iap.affordances["listVersions"] == "asc iap versions list --iap-id iap-1")
+        #expect(iap.apiLinks["listVersions"]?.href == "/api/v1/iap/iap-1/versions")
+    }
 }

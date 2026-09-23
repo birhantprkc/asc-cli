@@ -41,7 +41,7 @@ public struct Affordance: Sendable, Equatable {
         case "list", "get": return "GET"
         case "create": return "POST"
         case "update": return "PATCH"
-        case "delete": return "DELETE"
+        case "delete", "remove": return "DELETE"
         default: return "POST"
         }
     }

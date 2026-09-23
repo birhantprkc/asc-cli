@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Submit in-app purchases and subscriptions with an app version** — `asc versions submit --version-id <id> --with-products` adds every in-app purchase and subscription that is `READY_TO_SUBMIT` with a submittable version (and its subscription group's version) to the app version's review submission and submits them together — the way first-time products must go to review — using only the public API and your API key, no iris web session. `--dry-run` lists what would be submitted and submits nothing. REST: `POST /api/v1/versions/:id/submit?with-products=true&dry-run=true` (the route `submitForReview` links pointed at now exists). See `docs/features/submit-with-products.md`.
+- **Product versions** — `asc iap versions list --iap-id`, `asc subscriptions versions list --subscription-id` and `asc subscription-groups versions list --group-id` show each product's review versions and state; a submittable version offers `addToSubmission`. IAPs, subscriptions and groups gain a `listVersions` affordance. REST: `GET /api/v1/{iap,subscriptions,subscription-groups}/:id/versions`.
+- **Build a review submission step by step** — `asc review-submissions create --app-id [--platform]` (opens or reuses the app's draft), `items add --submission-id` with one of `--version-id`, `--iap-version-id`, `--subscription-version-id`, `--subscription-group-version-id`, `items remove --item-id`, and `submit --submission-id`. REST: `POST /api/v1/apps/:appId/review-submissions`, `POST /api/v1/review-submissions/:id/items`, `DELETE /api/v1/review-submissions/items/:itemId`, `POST /api/v1/review-submissions/:id/submit`.
+- **`STORAGE` performance metrics** — the new category Apple reports is mapped and usable with `perf-metrics list --metric-type STORAGE`.
+
+### Changed
+- **Dependencies updated to their latest releases**, with `Package.swift` minimums raised to match: appstoreconnect-swift-sdk 4.4.3 (was 4.2.0), Hummingbird 2.27.0, swift-argument-parser 1.8.2, TauTUI 0.2.2, SweetCookieKit 0.5.3, Mockable 0.6.4 and the rest. The `hello-plugin` example pins Hummingbird 2.27.0 to match the host.
+- **Refused submissions explain why** — when Apple refuses to add an item to, or submit, a review submission, the error lists the specific reasons from Apple's `associatedErrors` (missing device screenshots, content rights declaration, App Privacy answers, pricing) instead of only "please check associated errors".
+
+### Fixed
+- **`review-submissions items list` shows what each item points at** — items never asked Apple for their relationships (`include=`), so every item showed no linked type or id, even app versions. They now show `APP_STORE_VERSION`, the new product version types and the others, with the `getVersion` affordance for app versions.
+
 ---
 
 ## [0.18.4] - 2026-09-23

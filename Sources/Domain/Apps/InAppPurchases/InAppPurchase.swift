@@ -153,6 +153,7 @@ extension InAppPurchase: Presentable {
 extension InAppPurchase: AffordanceProviding {
     public var structuredAffordances: [Affordance] {
         var items: [Affordance] = [
+            Affordance(key: "listVersions", command: "iap versions", action: "list", params: ["iap-id": id]),
             Affordance(key: "createLocalization", command: "iap-localizations", action: "create",
                        params: ["iap-id": id, "locale": "en-US", "name": "<name>"]),
             Affordance(key: "delete", command: "iap", action: "delete",

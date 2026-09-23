@@ -1151,4 +1151,82 @@ struct RESTRoutesTests {
 
         #expect(normalized.contains("/api/v1/apps/42/experiments"))
     }
+
+    // MARK: - Product versions
+
+    @Test func `product version lists return REST links to siblings and to add to a submission`() async throws {
+        let mockRepo = MockProductVersionRepository()
+        given(mockRepo).listInAppPurchaseVersions(iapId: .any).willReturn([
+            ProductVersion(id: "iv-1", productId: "iap-1", kind: .inAppPurchase, version: 1, state: .prepareForSubmission),
+        ])
+        given(mockRepo).listSubscriptionVersions(subscriptionId: .any).willReturn([
+            ProductVersion(id: "sv-1", productId: "sub-1", kind: .subscription, version: 1, state: .prepareForSubmission),
+        ])
+        given(mockRepo).listSubscriptionGroupVersions(groupId: .any).willReturn([
+            ProductVersion(id: "gv-1", productId: "grp-1", kind: .subscriptionGroup, version: 1, state: .prepareForSubmission),
+        ])
+
+        let iap = try await IAPVersionsList.parse(["--iap-id", "iap-1"]).execute(repo: mockRepo, affordanceMode: .rest)
+        let sub = try await SubscriptionVersionsList.parse(["--subscription-id", "sub-1"]).execute(repo: mockRepo, affordanceMode: .rest)
+        let group = try await SubscriptionGroupVersionsList.parse(["--group-id", "grp-1"]).execute(repo: mockRepo, affordanceMode: .rest)
+        let all = [iap, sub, group].map { $0.replacingOccurrences(of: "\\/", with: "/") }
+
+        #expect(all.allSatisfy { $0.contains("\"_links\"") })
+        #expect(all[0].contains("/api/v1/iap/iap-1/versions"))
+        #expect(all[1].contains("/api/v1/subscriptions/sub-1/versions"))
+        #expect(all[2].contains("/api/v1/subscription-groups/grp-1/versions"))
+        #expect(all.allSatisfy { $0.contains("/api/v1/review-submissions/<submission-id>/items") })
+    }
+
+    // MARK: - Building a review submission
+
+    @Test func `a draft submission links to adding items and submitting, and a new item links to removing it`() async throws {
+        let mockRepo = MockSubmissionRepository()
+        given(mockRepo).createSubmission(appId: .any, platform: .any).willReturn(
+            ReviewSubmission(id: "sub-1", appId: "app-1", platform: .iOS, state: .readyForReview)
+        )
+        given(mockRepo).addItem(submissionId: .any, target: .any).willReturn(
+            ReviewSubmissionItem(id: "item-1", submissionId: "sub-1", state: .readyForReview,
+                                 linkedResourceId: "iv-1", linkedResourceType: .inAppPurchaseVersion)
+        )
+
+        let draft = try await ReviewSubmissionsCreate.parse(["--app-id", "app-1"])
+            .execute(repo: mockRepo, affordanceMode: .rest).replacingOccurrences(of: "\\/", with: "/")
+        let item = try await ReviewSubmissionItemsAdd.parse(["--submission-id", "sub-1", "--iap-version-id", "iv-1"])
+            .execute(repo: mockRepo, affordanceMode: .rest).replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(draft.contains("\"_links\""))
+        #expect(draft.contains("/api/v1/review-submissions/sub-1/items"))
+        #expect(draft.contains("/api/v1/review-submissions/sub-1/submit"))
+        #expect(item.contains("/api/v1/review-submissions/items/item-1"))
+        #expect(item.contains("\"DELETE\""))
+    }
+
+    @Test func `a dry run over REST links each planned product to its versions`() async throws {
+        let versionRepo = MockVersionRepository()
+        given(versionRepo).getVersion(id: .any).willReturn(
+            AppStoreVersion(id: "v-1", appId: "app-1", versionString: "1.0", platform: .iOS, state: .prepareForSubmission)
+        )
+        let iaps = MockInAppPurchaseRepository()
+        given(iaps).listInAppPurchases(appId: .any, limit: .any).willReturn(PaginatedResponse(data: [
+            InAppPurchase(id: "iap-1", appId: "app-1", referenceName: "Lifetime", productId: "com.app.lifetime",
+                          type: .nonConsumable, state: .readyToSubmit),
+        ]))
+        let groups = MockSubscriptionGroupRepository()
+        given(groups).listSubscriptionGroups(appId: .any, limit: .any).willReturn(PaginatedResponse(data: []))
+        let productVersions = MockProductVersionRepository()
+        given(productVersions).listInAppPurchaseVersions(iapId: .any).willReturn([
+            ProductVersion(id: "iv-1", productId: "iap-1", kind: .inAppPurchase, version: 1, state: .prepareForSubmission),
+        ])
+        let planner = SubmissionPlanner(iapRepo: iaps, groupRepo: groups,
+                                        subscriptionRepo: MockSubscriptionRepository(), productVersionRepo: productVersions)
+
+        let output = try await VersionsSubmit.parse(["--version-id", "v-1", "--dry-run"]).executeWithProducts(
+            submissionRepo: MockSubmissionRepository(), versionRepo: versionRepo, planner: planner, affordanceMode: .rest
+        ).replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(output.contains("\"_links\""))
+        #expect(output.contains("/api/v1/versions/v-1"))
+        #expect(output.contains("/api/v1/iap/iap-1/versions"))
+    }
 }

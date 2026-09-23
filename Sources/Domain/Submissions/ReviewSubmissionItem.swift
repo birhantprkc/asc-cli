@@ -79,6 +79,10 @@ extension ReviewSubmissionItem: AffordanceProviding {
             Affordance(key: "listSiblings", command: "review-submissions items", action: "list",
                        params: ["submission-id": submissionId]),
         ]
+        if isPending {
+            items.append(Affordance(key: "remove", command: "review-submissions items", action: "remove",
+                                    params: ["item-id": id]))
+        }
         if isRejected {
             // The reviewer's message text lives only behind the iris (cookie-auth)
             // surface — the official API has no resolutionCenter endpoints.
@@ -92,7 +96,8 @@ extension ReviewSubmissionItem: AffordanceProviding {
                                         params: ["version-id": linkedId]))
             case .appCustomProductPageVersion, .appStoreVersionExperiment, .appEvent,
                  .backgroundAssetVersion, .gameCenterAchievementVersion, .gameCenterActivityVersion,
-                 .gameCenterChallengeVersion, .gameCenterLeaderboardSetVersion, .gameCenterLeaderboardVersion:
+                 .gameCenterChallengeVersion, .gameCenterLeaderboardSetVersion, .gameCenterLeaderboardVersion,
+                 .inAppPurchaseVersion, .subscriptionVersion, .subscriptionGroupVersion:
                 // Other resource types don't have a top-level `asc <thing> get` yet.
                 break
             }
@@ -115,4 +120,7 @@ public enum ReviewSubmissionItemLinkedResource: String, Sendable, Equatable, Cod
     case gameCenterChallengeVersion = "GAME_CENTER_CHALLENGE_VERSION"
     case gameCenterLeaderboardSetVersion = "GAME_CENTER_LEADERBOARD_SET_VERSION"
     case gameCenterLeaderboardVersion = "GAME_CENTER_LEADERBOARD_VERSION"
+    case inAppPurchaseVersion = "IN_APP_PURCHASE_VERSION"
+    case subscriptionVersion = "SUBSCRIPTION_VERSION"
+    case subscriptionGroupVersion = "SUBSCRIPTION_GROUP_VERSION"
 }
