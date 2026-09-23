@@ -21,10 +21,9 @@ fi
 
 # 1. Try versioned section: ## [VERSION]
 NOTES=$(awk -v version="$VERSION" '
-    /^## \[/ {
-        if (printing) { exit }
-        if (index($0, "[" version "]") > 0) { printing=1; next }
-    }
+    /^## / && printing { exit }
+    /^## \[/ && index($0, "[" version "]") > 0 { printing=1; next }
+    printing && (/^---$/ || /^\[[^]]+\]: /) { exit }
     printing { print }
 ' "$CHANGELOG_FILE")
 
@@ -32,7 +31,7 @@ NOTES=$(awk -v version="$VERSION" '
 if [ -z "$NOTES" ]; then
     NOTES=$(awk '
         /^## \[Unreleased\]/ { printing=1; next }
-        /^## \[/             { if (printing) exit }
+        /^## /               { if (printing) exit }
         /^---$/              { if (printing) exit }
         printing             { print }
     ' "$CHANGELOG_FILE")

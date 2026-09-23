@@ -1,4 +1,4 @@
-.PHONY: build test lint format clean dev run
+.PHONY: build test lint format clean dev run docs check-docs
 
 build:
 	swift build
@@ -22,3 +22,10 @@ dev: build
 
 run:
 	swift run asc $(ARGS)
+
+# Regenerate docs/commands.md and docs/README.md (never edit those by hand)
+docs: build
+	python3 scripts/gen-docs.py .build/debug/asc
+
+check-docs:
+	python3 scripts/check-docs.py

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. It holds only what applies to every task; everything else is linked.
 
 ## TDD is non-negotiable (read this first)
 
@@ -13,274 +13,59 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. Run `swift test` (or a `--filter`'d subset) and **observed the test fail** — compile error counts as a failing test only if the assertion is the reason it can't compile (e.g. missing symbol the test names).
 4. Reported the red result back to the user (one line is fine: "test X fails with: <message>").
 
-Only after step 4 may you write code under `Sources/`. The full workflow, naming rules, and framework details are in the [Testing](#testing) section.
+Only after step 4 may you write code under `Sources/`.
 
 **If you skip the gate, you are violating the project's primary rule.** Treat this the same as committing secrets or force-pushing main.
+
+### Testing rules
+
+Chicago School — state-based, not interaction-based: tests verify what domain objects return and compute, not how they call collaborators. Red → green → refactor, every time.
+
+- Name tests after the user's expectation, with backticks: `` func `version is live when state is readyForSale`() ``.
+- Assert exact output values (`"READY_FOR_SALE"`, `"expired": true`), never "is non-empty" or "doesn't throw". Command tests assert the full JSON string.
+- Implement just enough to pass — no extra fields, no speculative branches.
+- Difficult to test = design problem. Never modify a test to make it pass; if it fails unexpectedly, the spec was wrong.
+- `@Testing` (not XCTest); `@Mockable` protocols with `given().willReturn()`; shared test data in `Tests/DomainTests/TestHelpers/MockRepositoryFactory.swift`.
 
 ## Commands
 
 ```bash
-# Build
-swift build                  # Debug build
-swift build -c release       # Release build
-
-# Test
-swift test                               # All tests
-swift test --filter 'AppTests'           # Tests matching a pattern
-swift test --enable-code-coverage        # With coverage
-
-# Run
-swift run asc <args>
-make run ARGS="apps list"
+swift build                          # debug build (-c release for release)
+swift test                           # all tests
+swift test --filter 'AppTests'       # tests matching a pattern
+swift test --enable-code-coverage    # with coverage
+make run ARGS="apps list"            # run the CLI
+make docs                            # regenerate docs/commands.md + docs/README.md
+make check-docs                      # broken links, doc size budgets
 ```
 
 ## Architecture
 
-Three strict layers with a unidirectional dependency flow: `ASCCommand → Infrastructure → Domain`
+Three strict layers, dependencies pointing one way: `ASCCommand → Infrastructure → Domain`.
 
 ```
 Sources/
-├── Domain/        # Pure value types, @Mockable protocols — zero I/O
-├── Infrastructure/# Implements Domain protocols via appstoreconnect-swift-sdk
-└── ASCCommand/    # CLI entry point, output formatting, TUI
+├── Domain/          # Pure value types, @Mockable protocols — zero I/O
+├── Infrastructure/  # Implements Domain protocols via appstoreconnect-swift-sdk
+└── ASCCommand/      # CLI entry (ASC.swift), output formatting, REST server (Commands/Web/), TUI
 ```
 
-### Domain Layer
+Domain folders mirror the App Store Connect resource hierarchy (`Domain/Apps/Versions/Localizations/…`); Infrastructure and `Tests/` mirror Domain exactly. Look at the tree rather than a list here.
 
-All models are `public struct` + `Sendable` + `Equatable` + `Codable`. The JSON encoding is the public schema. Models with optional text fields use custom `Codable` with `encodeIfPresent` to omit nil values from JSON output.
+**Rules every change follows:**
+- Domain models are `public struct` + `Sendable` + `Equatable` + `Codable`; the JSON encoding is the public schema. Optional text fields use `encodeIfPresent` so nil is omitted.
+- Every model carries its **parent ID** (`AppStoreVersion.appId`, `AppScreenshot.setId`). The API doesn't return parent IDs, so Infrastructure mappers inject them from the request.
+- State enums expose **semantic booleans** (`isLive`, `isEditable`, `isPending`) for agent decisions.
+- **CAEOAS:** every model provides `structuredAffordances` — ready-to-run next commands, state-aware (e.g. `submitForReview` only when `isEditable`). The CLI `affordances` and REST `_links` both derive from it.
+- **CLI and REST ship together:** a command that returns data is also exposed by `asc web-server`. A feature isn't done until it is reachable over REST.
+- `AppStoreVersionLocalization` (`asc version-localizations`: whatsNew, description, keywords) and `AppInfoLocalization` (`asc app-info-localizations`: name, subtitle, privacy URLs) are different resources with different repositories. Don't mix them up.
 
-**Design rules:**
-- Every model carries its **parent ID** (e.g. `AppStoreVersion.appId`, `AppScreenshot.setId`) — the App Store Connect API doesn't return parent IDs, so Infrastructure injects them
-- State enums expose **semantic booleans** (`isLive`, `isEditable`, `isPending`, `isComplete`) for agent decision-making
-- All repositories and providers are `@Mockable` protocols
+Why it's built this way: [docs/design.md](docs/design.md).
 
-### Infrastructure Layer
+## When you are…
 
-Adapts `appstoreconnect-swift-sdk` to Domain protocols. The critical pattern: mappers always inject the parent ID from the request parameter into every mapped response object.
-
-### ASCCommand Layer
-
-- `ASC.swift` — `@main` entry, registers all subcommands
-- `GlobalOptions.swift` — `--output` (default: json), `--pretty`, `--timeout`
-- `OutputFormatter.swift` — JSON/table/markdown rendering; `formatAgentItems()` merges affordances
-- `ClientProvider.swift` — factory wiring auth → authenticated repositories
-- `Commands/Web/` — `asc web-server` serves the REST API; `RESTRoutes.configure` composes `*Controller` structs (Hummingbird). Every new list/read command **must** also be exposed here (see "REST exposure" below)
-
-## Key Design Patterns
-
-### CAEOAS (Commands As the Engine Of Application State)
-
-CLI equivalent of REST HATEOAS. Every response includes an `affordances` field with ready-to-run CLI commands so an AI agent can navigate without knowing the command tree. Affordances are **state-aware** — e.g. `submitForReview` only appears when `isEditable == true`.
-
-All domain models implement `AffordanceProviding`:
-```swift
-protocol AffordanceProviding {
-    var affordances: [String: String] { get }
-}
-```
-
-`OutputFormatter.formatAgentItems()` merges affordances into the encoded JSON output.
-
-### REST exposure (every feature must ship both CLI and REST)
-
-The `asc web-server` command exposes the same functionality as the CLI over HTTP so an agent can drive it as a REST service. **A feature is not complete until it is reachable via REST.**
-
-Required steps when adding a new list/read command (or any command that returns data an agent might want over HTTP):
-
-1. **Make the domain model `Presentable`** — `tableHeaders` + `tableRow`. Needed because `restFormat` is `<T: Encodable & AffordanceProviding & Presentable>`
-2. **Use `structuredAffordances` (not raw `affordances`)** on the model — the REST renderer derives `_links` from `Affordance` values; returning a plain `[String: String]` leaves `_links` empty
-3. **Give the command an `affordanceMode` parameter** — `func execute(repo:…, affordanceMode: AffordanceMode = .cli)` forwards to `formatter.formatAgentItems(items, affordanceMode: affordanceMode)`. The same `execute` runs for both `cli` and `rest` modes
-4. **Add/extend a controller** under `Sources/ASCCommand/Commands/Web/Controllers/` — inject the repository, register a `group.get("/…")` route, parse query params via `request.uri.queryParameters` (use the same names as the CLI flags, e.g. `?state=&limit=&expired-only=&before=`), call the repository, return `try restFormat(items)`
-5. **Wire the controller** in `Sources/ASCCommand/Commands/Web/RESTRoutes.swift` (construct with `factory.make…Repository(authProvider: auth)`)
-6. **Advertise the resource** from `APIRoot.structuredAffordances` so `GET /api/v1` lists the new top-level resource
-7. **Add a REST test** in `Tests/ASCCommandTests/Commands/Web/RESTRoutesTests.swift` — call `execute(repo:affordanceMode: .rest)` and assert the output contains `"_links"` and the resolved REST paths
-8. **CLI and REST query-param names must match** — if the CLI uses `--expired-only`, the REST query param is `?expired-only=true`; both go through the same repository method
-
-Shared helpers (all in `Sources/ASCCommand/Commands/Web/RESTRoutes.swift`):
-- `restFormat(items)` — REST equivalent of `formatter.formatAgentItems(items, affordanceMode: .rest)`
-- `jsonError(message, status:)` — JSON error response (lives in `Infrastructure/Web/ASCWebServer.swift`; `import Infrastructure`)
-
-Affordance actions map to REST by `RESTPathResolver`: `list`/`get` → GET, `create` and `add` → POST to the parent's collection, `update` → PATCH, `delete` and `remove` → DELETE on the resource, anything else (e.g. `submit`) → POST `…/{id}/{action}`.
-
-Controllers are structs with dependencies injected at init (Hummingbird pattern). Repositories are constructed once in `RESTRoutes.configure`, never per request.
-
-### Resource Hierarchy
-
-Commands mirror the App Store Connect API hierarchy exactly:
-```
-App → AppStoreVersion → AppStoreVersionLocalization → AppScreenshotSet → AppScreenshot
-App → AppInfo → AppInfoLocalization
-App → AppInfo → AgeRatingDeclaration
-AppCategory (top-level, not nested under App)
-App → CustomerReview → CustomerReviewResponse
-App → Build → BetaBuildLocalization
-App → BuildUpload
-App → TestFlight (BetaGroup → BetaTester)
-App → CiProduct (XcodeCloud) → CiWorkflow → CiBuildRun
-AppStoreVersion → VersionReadiness
-AppStoreVersion → AppStoreReviewDetail
-CodeSigning: BundleID → Profile
-App → AppStoreVersionExperiment → ExperimentTreatment → ExperimentTreatmentLocalization
-App → PerformanceMetric (via perfPowerMetrics)
-Build → PerformanceMetric (via perfPowerMetrics)
-Build → DiagnosticSignatureInfo → DiagnosticLogEntry
-InAppPurchase | Subscription | SubscriptionGroup → ProductVersion
-App → ReviewSubmission → ReviewSubmissionItem → (AppStoreVersion | ProductVersion | …)
-```
-
-Domain folders are nested to mirror the resource hierarchy:
-```
-Domain/
-├── Apps/                          → App, AppRepository
-│   ├── Versions/                  → AppStoreVersion, AppStoreVersionState, VersionReadiness,
-│   │   │                            VersionRepository, ReviewDetailRepository,
-│   │   │                            AppStoreReviewDetail, ReviewDetailUpdate
-│   │   └── Localizations/         → AppStoreVersionLocalization, VersionLocalizationRepository
-│   │       └── ScreenshotSets/    → AppScreenshotSet, ScreenshotDisplayType, ScreenshotRepository
-│   │           └── Screenshots/   → AppScreenshot
-│   ├── AppInfos/                  → AppInfo, AppInfoLocalization, AppInfoRepository,
-│   │                                AppCategory, AppCategoryRepository,
-│   │                                AgeRatingDeclaration, AgeRatingDeclarationRepository
-│   ├── Reviews/                   → CustomerReview, CustomerReviewResponse, ReviewResponseState,
-│   │                                CustomerReviewRepository
-│   ├── Builds/                    → Build, BuildUpload, BetaBuildLocalization,
-│   │                                BuildRepository, BuildUploadRepository, BetaBuildLocalizationRepository
-│   ├── Experiments/               → AppStoreVersionExperiment, AppStoreVersionExperimentState,
-│   │                                ExperimentTreatment, ExperimentTreatmentLocalization, ExperimentRepository
-│   ├── Pricing/                   → PricingRepository
-│   ├── ProductVersions/           → ProductVersion, ProductVersionKind, ProductVersionState,
-│   │                                ProductVersionRepository (IAP/subscription/group review versions)
-│   ├── TestFlight/                → BetaGroup, BetaTester, TestFlightRepository
-│   └── Performance/              → PerformanceMetric, PerformanceMetricCategory, DiagnosticSignatureInfo,
-│                                    DiagnosticType, DiagnosticLogEntry, PerfMetricsRepository, DiagnosticsRepository
-├── CodeSigning/                   → BundleID, Certificate, Device, Profile + their repositories
-│   ├── BundleIDs/                 → BundleID, BundleIDRepository
-│   ├── Certificates/              → Certificate, CertificateRepository
-│   ├── Devices/                   → Device, DeviceRepository
-│   └── Profiles/                  → Profile, ProfileRepository
-├── Submissions/                   → ReviewSubmission, ReviewSubmissionState, ReviewSubmissionItem,
-│                                    ReviewItemTarget, ReviewSubmissionError, SubmissionRepository,
-│                                    SubmissionPlanner/SubmissionPlan (versions submit --with-products)
-├── Auth/                          → AuthCredentials, AuthProvider, AuthStatus, AuthStorage, CredentialSource, AuthError
-├── Projects/                      → ProjectConfig, ProjectConfigStorage
-├── Skills/                        → Skill, SkillCheckResult, SkillConfig, SkillRepository, SkillConfigStorage
-└── Shared/                        → AffordanceProviding, APIError, OutputFormat, PaginatedResponse
-```
-Infrastructure and test folders mirror this exact structure.
-
-### Project Context (`.asc/project.json`)
-
-`asc init` saves the app ID, name, and bundle ID to `.asc/project.json` in the current directory:
-
-```bash
-asc init              # auto-detect from *.xcodeproj bundle ID
-asc init --name "X"   # search by name
-asc init --app-id <id>
-```
-
-`FileProjectConfigStorage` (Infrastructure) reads/writes `.asc/project.json` relative to cwd. `ProjectConfig` (Domain) carries `appId`, `appName`, `bundleId` + CAEOAS affordances.
-
-## Testing
-
-We follow the Chicago School of TDD — state-based, not interaction-based. Tests verify what domain objects return and compute, not how they call collaborators. The non-negotiable rule and pre-implementation gate live at the [top of this file](#tdd-is-non-negotiable-read-this-first); everything below is the framework-specific detail.
-
-**Red → green → refactor**, in that order, every time:
-
-1. **Think from the user's mental model.** Describe the behaviour as the user would: "a version is live when its state is `readyForSale`", "submit is only available when the version is editable". Don't describe internal calls.
-2. **Write the test.** Name it after the user's expectation. Assert exact output values (e.g. `"IOS"`, `"READY_FOR_SALE"`, `"expired": true`) — not "is non-empty" or "doesn't throw".
-3. **Run the test and confirm it fails (red).** If it passes before you wrote any code, it isn't testing new behaviour — fix the test.
-4. **Implement just enough code to make it pass (green).** No extra fields, no speculative branches.
-5. **Refactor while green.** Tests stay passing throughout.
-
-**Hard rules:**
-
-- Difficult to test = design problem, not a testing exception. Refactor the design, don't skip the test.
-- Never modify a test to make it pass. If a test fails unexpectedly, the spec (step 1) was wrong — fix the thinking, not the assertion.
-- No "I'll add tests after". Production code without a preceding red test is a defect, even if it works.
-
-**Framework:**
-
-- `@Testing` macro (not XCTest).
-- `@Mockable` on protocols; `given().willReturn()` in tests.
-- Test names use backticks: `` func `version is live when state is readyForSale`() ``.
-- Shared test data: `Tests/DomainTests/TestHelpers/MockRepositoryFactory.swift`.
-
-## Two Localization Types
-
-The codebase has two distinct localization concepts with separate repositories:
-
-| Type | Domain folder | Repository | Commands | Data |
-|------|--------------|------------|----------|------|
-| `AppStoreVersionLocalization` | `Domain/Localizations/` | `VersionLocalizationRepository` | `asc version-localizations *` | whatsNew, description, keywords, screenshots |
-| `AppInfoLocalization` | `Domain/AppInfos/` | `AppInfoRepository` | `asc app-info-localizations *` | name, subtitle, privacyPolicyUrl, privacyChoicesUrl, privacyPolicyText |
-
-`ScreenshotRepository` (in `Domain/ScreenshotSets/`) handles screenshot sets and screenshot images — **no localization methods**.
-
-## Documentation
-
-After every code change — new feature, improvement, or bug fix — update all affected docs before considering the task done.
-
-### What to update
-
-| Change type | Files to update |
-|-------------|-----------------|
-| New feature / command | `docs/features/<feature>.md` (create, include a **REST Endpoints** section), `CHANGELOG.md` ([Unreleased]), `README.md` (feature list + CLI examples), `skills/` (relevant skill files), `Sources/ASCCommand/Commands/Web/Controllers/` (new or extended controller), `Sources/ASCCommand/Commands/Web/RESTRoutes.swift` (wire controller), `Sources/Domain/Shared/APIRoot.swift` (advertise new top-level resource), `Tests/ASCCommandTests/Commands/Web/RESTRoutesTests.swift` (REST test) |
-| Improvement / enhancement | `docs/features/<feature>.md` (update affected sections), `CHANGELOG.md` ([Unreleased]) |
-| Bug fix | `CHANGELOG.md` ([Unreleased]) |
-| Architecture / API change | `CLAUDE.md` (update architecture / patterns sections), `docs/features/<feature>.md` |
-| Auth / config change | `CLAUDE.md` (Authentication section), `README.md` |
-
-### Per-file rules
-
-**`docs/features/<feature>.md`** — write from actual code (read files first, never from memory). Structure:
-1. CLI Usage — flags table + examples + output samples (json + table)
-2. REST Endpoints — path table + query-param mapping (CLI flag → REST query) + curl example
-3. Typical Workflow — end-to-end bash script showing the happy path
-4. Architecture — three-layer ASCII diagram + dependency note
-5. Domain Models — every public struct/enum/protocol with fields, computed properties, affordances
-6. File Map — `Sources/` and `Tests/` trees + wiring files table (must list the REST controller)
-7. API Reference — endpoint → SDK call → repository method
-8. Testing — representative test snippet + `swift test` command
-9. Extending — natural next steps with stub code
-
-**`CHANGELOG.md`** — add entry under `[Unreleased]` using Keep a Changelog format:
-- `### Added` for new features/commands
-- `### Changed` for improvements to existing behaviour
-- `### Fixed` for bug fixes
-
-**`README.md`** — update the feature/command table and any usage examples that changed.
-
-**`skills/<feature>`** — always use the `/skill-creator` skill to create or update feature skills
-
-Key skills to keep in sync:
-- `implement-feature/SKILL.md` — workflow + checklist
-- `asc-cli/references/commands.md` — command reference
-- Feature-specific skills (`asc-testflight`, `asc-beta-review`, `asc-builds-upload`, `asc-code-signing`, `asc-check-readiness`, `asc-app-previews`, `asc-app-shots`, `asc-review-detail`, `asc-plugins`, `asc-experiments`, etc.)
-
-**`CLAUDE.md`** — update when architecture patterns, file locations, or design rules change.
-
----
-
-## Authentication
-
-**Option A — Persistent login (recommended):**
-
-```bash
-asc auth login --key-id <id> --issuer-id <id> --private-key-path ~/.asc/AuthKey_XXXXXX.p8 [--vendor-number <number>]
-asc auth update --vendor-number <number>  # add vendor number to existing account
-asc auth logout   # remove saved credentials
-asc auth check    # verify credentials; shows source: "file" or "environment"
-```
-
-Credentials saved to `~/.asc/credentials.json`. Vendor number (optional) is used by `sales-reports` and `finance-reports` commands — auto-resolved from the active account when `--vendor-number` is omitted.
-
-**Option B — Environment variables:**
-
-```bash
-export ASC_KEY_ID="YOUR_KEY_ID"
-export ASC_ISSUER_ID="YOUR_ISSUER_ID"
-export ASC_PRIVATE_KEY_PATH="~/.asc/AuthKey_XXXXXX.p8"
-# OR use ASC_PRIVATE_KEY with the PEM content directly
-```
-
-**Resolution order:** `~/.asc/credentials.json` → environment variables, handled by `CompositeAuthProvider` in Infrastructure. `EnvironmentAuthProvider` is the fallback.
+- **adding a feature** → `implement-feature` skill (architecture approval, TDD phases, REST exposure checklist, docs)
+- **improving an existing one** → `improvement` skill
+- **touching docs** → [docs/documentation-design](docs/documentation-design/README.md). In short: new feature = `docs/features/<x>/README.md` + one CHANGELOG line + `make docs`; fix = one CHANGELOG line. Never hand-edit `docs/commands.md` or `docs/README.md`.
+- **working with auth or credentials** → [docs/features/asc-auth](docs/features/asc-auth/README.md) (`~/.asc/credentials.json` first, then `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_PRIVATE_KEY_PATH` env vars, via `CompositeAuthProvider`)
+- **working with iris (private API)** → [docs/features/iris](docs/features/iris/README.md)

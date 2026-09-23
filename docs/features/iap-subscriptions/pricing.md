@@ -65,7 +65,7 @@ Each price point points at the next legal action:
 |------|--------|--------------|
 | `/api/v1/subscriptions/:subscriptionId/price-points` | GET | `territory` |
 
-IAP pricing endpoints live alongside the IAP resource (see [IAP REST routes](../iap-subscriptions.md#rest-endpoints)).
+IAP pricing endpoints live alongside the IAP resource (see [IAP REST routes](README.md#rest)).
 
 ## API reference
 

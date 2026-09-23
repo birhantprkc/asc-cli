@@ -36,8 +36,8 @@ Implement features using architecture-first design, TDD, rich domain models, and
    • Register the route in RESTRoutes.swift
    • Verify _links is populated for the parent resource
 
-4. FEATURE DOC
-   • Write docs/features/<feature>.md from the actual implementation
+4. DOCS
+   • docs/features/<feature>/README.md (user-facing, ≤200 lines), one CHANGELOG line, make docs
 ```
 
 ## Phase 0: Architecture Design (MANDATORY)
@@ -335,26 +335,32 @@ Per CLAUDE.md, **a feature is not complete until it is reachable via REST.** Ste
    }
    ```
 
-6. Add a REST test in `Tests/ASCCommandTests/Commands/Web/RESTRoutesTests.swift` that calls `execute(repo:affordanceMode: .rest)` and asserts `_links` + the resolved REST path.
+6. **Advertise the resource** from `APIRoot.structuredAffordances` (`Sources/Domain/Shared/APIRoot.swift`) when it is a new top-level resource, so `GET /api/v1` lists it.
 
-7. **Smoke-test the live server.** Build (`swift build`), restart (`asc web-server`), and `curl` the parent resource — confirm `_links` for each item points at the new endpoint.
+7. Add a REST test in `Tests/ASCCommandTests/Commands/Web/RESTRoutesTests.swift` that calls `execute(repo:affordanceMode: .rest)` and asserts `_links` + the resolved REST path.
 
-### Phase 5: Feature doc
+8. **Smoke-test the live server.** Build (`swift build`), restart (`asc web-server`), and `curl` the parent resource — confirm `_links` for each item points at the new endpoint.
 
-Write `docs/features/<feature>.md` from the actual implementation. The doc is derived from code — read the files, then write. Never write from memory.
+**REST rules:**
+- CLI flag and REST query-param names match: `--expired-only` ↔ `?expired-only=true`, both calling the same repository method.
+- Helpers in `RESTRoutes.swift`: `restFormat(items)` (REST twin of `formatAgentItems(…, affordanceMode: .rest)`) and `jsonError(message, status:)` (from `Infrastructure/Web/ASCWebServer.swift`).
+- `RESTPathResolver` maps affordance actions to HTTP: `list`/`get` → GET, `create`/`add` → POST to the parent's collection, `update` → PATCH, `delete`/`remove` → DELETE, anything else (e.g. `submit`) → POST `…/{id}/{action}`.
+- Controllers are structs with dependencies injected at init; repositories are constructed once in `RESTRoutes.configure`, never per request.
 
-Structure:
-1. **CLI Usage** — one section per command, with flags table + examples + table-output sample
-2. **REST Endpoints** — path table + query-param mapping + curl example
-3. **Typical Workflow** — end-to-end bash script showing the happy path
-4. **Architecture** — three-layer ASCII diagram + dependency note
-5. **Domain Models** — every public struct/enum/protocol with fields, computed properties, and affordances
-6. **File Map** — `Sources/` and `Tests/` trees + wiring files table (must list the REST controller)
-7. **API Reference** — endpoint → SDK call → repository method table
-8. **Testing** — one representative test snippet + `swift test` command
-9. **Extending** — natural next steps with stub code
+### Phase 5: Docs
 
-Use `docs/features/screenshots.md` as the canonical reference example.
+Docs follow `docs/documentation-design/README.md`: each fact has one home, and nothing repeats `--help` or the source.
+
+1. **`docs/features/<feature>/README.md`** — user-facing, ≤200 lines, written from the actual implementation (read the code, never write from memory):
+   - frontmatter `description:` — one sentence, what + "Use when …", ≤250 chars (it becomes the docs index row)
+   - Quick start → Workflows → REST (paths + query-param mapping) → Gotchas → See also
+   - **No** flag tables (`docs/commands.md` is generated), architecture, domain model listings, file maps or test snippets. Non-obvious reasons (Apple caps, multi-call workarounds) go in Gotchas as one-liners.
+   - A topic that doesn't fit goes into `docs/features/<feature>/<topic>.md` next to the README.
+   - Example: `docs/features/testflight/README.md`.
+2. **`CHANGELOG.md`** — one bullet under `[Unreleased]`, ≤300 chars: starts with what the user types, says the effect (not the implementation), ends with `→ [docs](docs/features/<feature>/README.md)` and the PR link. Implementation detail goes in the PR.
+3. **`make docs`** — regenerates `docs/commands.md` and the `docs/README.md` index. Never edit those by hand.
+4. **README.md** — only if the feature is a new row in its "What It Covers" table.
+5. `make check-docs` — no broken links, within budgets.
 
 ---
 
@@ -415,14 +421,14 @@ Use `docs/features/screenshots.md` as the canonical reference example.
 ### Phase 4: REST exposure
 - [ ] Controller added under `Sources/ASCCommand/Commands/Web/Controllers/`
 - [ ] Wired in `Sources/ASCCommand/Commands/Web/RESTRoutes.swift`
+- [ ] New top-level resource advertised in `APIRoot.structuredAffordances`
+- [ ] REST query-param names match the CLI flags
 - [ ] REST test in `RESTRoutesTests.swift` — calls `execute(repo:affordanceMode: .rest)`, asserts `"_links"` + resolved path
 - [ ] **Smoke-tested live server** — restarted and curl'd the parent resource; `_links` confirms the new endpoint URL
 
-### Phase 5: Feature Doc
-- [ ] `docs/features/<feature>.md` written from actual code (read files first)
-- [ ] CLI commands documented with flags table + examples
-- [ ] **REST Endpoints section** with path table + query-param mapping + curl example
-- [ ] Domain models section matches actual struct fields
-- [ ] File map reflects actual directory structure (must list REST controller)
-- [ ] API reference table complete
+### Phase 5: Docs
+- [ ] `docs/features/<feature>/README.md` with `description`, written from actual code, ≤200 lines
+- [ ] **REST section** with path table + query-param mapping
+- [ ] No flag tables, architecture, domain listings or file maps
+- [ ] `make docs` run; `make check-docs` clean for the new files
 - [ ] CHANGELOG.md entry under `[Unreleased]`

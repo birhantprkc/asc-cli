@@ -64,4 +64,22 @@ awk \
 ' "$CHANGELOG_FILE" > "$TEMP_FILE"
 
 mv "$TEMP_FILE" "$CHANGELOG_FILE"
+
+# A release with nothing under [Unreleased] still gets an entry
+TEMP_FILE=$(mktemp)
+awk -v version="$VERSION" '
+    function close_section() {
+        if (in_ver && !has_content) { print "### Changed"; print "- Bug fixes and improvements."; print "" }
+        in_ver = 0
+    }
+    index($0, "## [" version "] - ") == 1 { in_ver = 1; print; next }
+    in_ver && (/^---$/ || /^## / || /^\[[^]]+\]: /) { close_section() }
+    in_ver && /[^[:space:]]/ { has_content = 1 }
+    { print }
+    END { close_section() }
+' "$CHANGELOG_FILE" > "$TEMP_FILE"
+mv "$TEMP_FILE" "$CHANGELOG_FILE"
 echo "Promoted [Unreleased] → [$VERSION] - $RELEASE_DATE in $CHANGELOG_FILE"
+
+# Keep CHANGELOG.md to [Unreleased] + the current minor; move older minors to docs/changelog/
+python3 "$(dirname "$0")/changelog-rollover.py" "$CHANGELOG_FILE"

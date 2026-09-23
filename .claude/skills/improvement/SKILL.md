@@ -53,9 +53,9 @@ Make improvements to existing functionality using TDD and rich domain design.
 ┌─────────────────────────────────────────────────────────────┐
 │  4. UPDATE FEATURE DOC (if public surface changed)           │
 ├─────────────────────────────────────────────────────────────┤
-│  • Update docs/features/<feature>.md to match new behavior   │
-│  • Only required when CLI flags, domain model fields,        │
-│    affordances, or architecture changed                       │
+│  • Update docs/features/<feature>/README.md if usage,        │
+│    REST, or gotchas changed (flags: just run `make docs`)    │
+│  • One CHANGELOG line under [Unreleased]                      │
 │  • Derive from code — read files, then write                 │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -191,4 +191,4 @@ swift test  # Must remain all green
 - [ ] Improvement implemented
 - [ ] New test PASSES
 - [ ] All existing tests still pass (`swift test`)
-- [ ] `docs/features/<feature>.md` updated if CLI flags, domain model fields, affordances, or architecture changed
+- [ ] `docs/features/<feature>/README.md` updated if usage, REST or gotchas changed; `make docs` if flags changed; one CHANGELOG line
