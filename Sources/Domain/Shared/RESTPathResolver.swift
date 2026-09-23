@@ -167,6 +167,7 @@ public final class RESTPathResolver: @unchecked Sendable {
         _ = _appShotsRoutes
         _ = _submissionRoutes
         _ = _productVersionRoutes
+        _ = _appPricingRoutes
         _ = _resolutionCenterRoutes
         _ = _experimentRoutes
 

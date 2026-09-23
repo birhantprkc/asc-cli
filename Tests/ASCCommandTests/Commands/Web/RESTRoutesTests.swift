@@ -1229,4 +1229,20 @@ struct RESTRoutesTests {
         #expect(output.contains("/api/v1/versions/v-1"))
         #expect(output.contains("/api/v1/iap/iap-1/versions"))
     }
+
+    // MARK: - App pricing
+
+    @Test func `app price points link to setting the app's price over REST`() async throws {
+        let mockRepo = MockPricingRepository()
+        given(mockRepo).listPricePoints(appId: .any, territory: .any).willReturn([
+            AppPricePoint(id: "pp-1", appId: "app-1", territory: "USA", customerPrice: "0.0", proceeds: "0.0"),
+        ])
+
+        let output = try await AppsPricePointsList.parse(["--app-id", "app-1"])
+            .execute(repo: mockRepo, affordanceMode: .rest).replacingOccurrences(of: "\\/", with: "/")
+
+        #expect(output.contains("\"_links\""))
+        #expect(output.contains("/api/v1/apps/app-1/prices/set"))
+        #expect(output.contains("/api/v1/apps/app-1/price-points"))
+    }
 }

@@ -57,7 +57,7 @@ Now `asc iap list --app-id <id>` enriches each IAP with the right submission aff
 
 | Category | What you can do |
 | --- | --- |
-| **Apps & Versions** | List apps, create versions, link builds, submit for App Store review — with first-time IAPs and subscriptions in the same submission (`--with-products`) |
+| **Apps & Versions** | List apps, set the app's price (or make it free), create versions, link builds, submit for App Store review — with first-time IAPs and subscriptions in the same submission (`--with-products`) |
 | **Builds** | Archive Xcode projects, export IPA/PKG, upload to App Store Connect, distribute to TestFlight, update beta notes |
 | **Metadata** | Update What's New, description, and keywords per locale |
 | **App Info** | Set per-locale name, subtitle, privacy policy; manage categories and age rating |
@@ -163,6 +163,8 @@ asc versions list --app-id <id>
 asc versions create --app-id <id> --version <v> --platform ios
 asc versions set-build --version-id <id> --build-id <id>
 asc versions check-readiness --version-id <id>
+asc apps price-points list --app-id <id> [--territory USA]
+asc apps prices set --app-id <id> --base-territory USA --price-point-id <id>   # 0.0 point = free
 asc versions submit --version-id <id> [--with-products] [--dry-run]
 asc version-review-detail get --version-id <id>
 asc version-review-detail update --version-id <id> --contact-first-name Jane --contact-email dev@example.com
