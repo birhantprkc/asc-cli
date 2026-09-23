@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Docs reorganised: a short README, one folder per feature under `docs/features/`, and a full command reference generated from the binary (`docs/commands.md`). Releases before 0.18 moved to `docs/changelog/`. → [docs](docs/README.md) ([#29](https://github.com/tddworks/asc-cli/pull/29))
 - Refused review submissions now list Apple's specific reasons (missing screenshots, content rights, App Privacy, pricing) instead of only "please check associated errors". ([#27](https://github.com/tddworks/asc-cli/pull/27))
 - Dependencies updated to their latest releases, including appstoreconnect-swift-sdk 4.4.3 (was 4.2.0) and Hummingbird 2.27.0; `Package.swift` minimums raised to match. ([#27](https://github.com/tddworks/asc-cli/pull/27))
 
